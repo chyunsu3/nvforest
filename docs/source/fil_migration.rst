@@ -21,7 +21,7 @@ necessary to specify the ``is_classifier`` parameter.
 
     # AFTER
     nvforest_model = nvforest.load_model("xgb_model.ubj")
-    nvforest_model_optimized = nvforest_model.optimize(batch_size=1024)
+    nvforest_model = nvforest_model.optimize(batch_size=1024)
     predictions = nvforest_model.predict(X_test)
     probabilities = nvforest_model.predict_proba(X_test)
     per_tree_pred = nvforest_model.predict_per_tree(X_test)
