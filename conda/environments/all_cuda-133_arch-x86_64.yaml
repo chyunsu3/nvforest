@@ -15,6 +15,7 @@ dependencies:
 - cuda-profiler-api
 - cuda-python>=13.0.1,<14.0a0
 - cuda-version=13.3
+- cuml==26.8.*,>=0.0.0a0
 - cupy>=14.0.1,!=14.1.0
 - cxx-compiler
 - cython>=3.0.0
