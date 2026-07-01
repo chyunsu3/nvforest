@@ -20,7 +20,7 @@ Call :py:meth:`~nvforest.load_model`, :py:meth:`~nvforest.load_from_sklearn`,
 or :py:meth:`~nvforest.load_from_treelite_model`. Note that it is no longer
 necessary to specify the ``is_classifier`` parameter.
 
-.. testcode:: workflow
+.. code-block:: python
 
     # BEFORE
     import cuml
@@ -30,6 +30,8 @@ necessary to specify the ``is_classifier`` parameter.
     probabilities = fil_model.predict_proba(X)
     per_tree_pred = fil_model.predict_per_tree(X)
     lead_ids = fil_model.apply(X)
+
+.. testcode:: workflow
 
     # AFTER
     import nvforest
@@ -44,11 +46,13 @@ Device selection
 ================
 Specify the ``device`` parameter when calling :py:meth:`~nvforest.load_model`.
 
-.. testcode:: workflow
+.. code-block:: python
 
     # BEFORE
     with cuml.fil.set_fil_device_type("cpu"):
         fil_model = cuml.fil.ForestInference.load_from_sklearn(skl_model)
+
+.. testcode:: workflow
 
     # AFTER
     nvforest_model = nvforest.load_from_sklearn(skl_model)

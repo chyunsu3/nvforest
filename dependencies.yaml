@@ -354,7 +354,6 @@ dependencies:
       - output_types: conda
         packages:
           - doxygen
-          - cuml==26.8.*,>=0.0.0a0
   py_version:
     specific:
       - output_types: conda
