@@ -4,13 +4,17 @@ Getting started with nvForest
 
 Installation
 ============
-nvForest is available on PyPI and Conda.
+You can install nvForest using Pip or Conda.
 
 .. code-block:: console
 
+   # Using Pip: need a suffix
    $ pip install nvforest-cu13
 
-   $ conda install nvforest
+.. code-block:: console
+
+   # Using Conda: need to specify the rapidsai channel
+   $ conda install -c rapidsai -c conda-forge nvforest
 
 You can also install nvForest as part of RAPIDS, a collection of libraries for GPU accelerated data science.
 Visit https://docs.rapids.ai/install/ for more information.
