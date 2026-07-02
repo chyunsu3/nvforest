@@ -8,7 +8,7 @@ You can install nvForest using Pip or Conda.
 
 .. code-block:: console
 
-   # Using Pip: need a suffix
+   # Using Pip: need a suffix corresponding to your CUDA version, e.g. for CUDA 13:
    $ pip install nvforest-cu13
 
 .. code-block:: console

@@ -55,7 +55,7 @@ Specify the ``device`` parameter when calling :py:meth:`~nvforest.load_model`.
 .. testcode:: workflow
 
     # AFTER
-    nvforest_model = nvforest.load_from_sklearn(skl_model)
+    nvforest_model = nvforest.load_from_sklearn(skl_model, device="cpu")
 
 nvForest also differs from FIL when it comes to the behavior when no device is explicitly
 specified. The ``device`` parameter defaults to ``"auto"``. nvForest will attempt to
