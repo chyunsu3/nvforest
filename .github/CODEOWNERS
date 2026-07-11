@@ -1,5 +1,5 @@
 # catch-all codeowner for any files not matched by the rules below
-* @rapidsai/packaging-codeowners
+* @rapidsai/nvforest-python-codeowners
 
 # cpp code owners
 cpp/               @rapidsai/nvforest-cpp-codeowners
@@ -24,3 +24,6 @@ CMakeLists.txt @rapidsai/nvforest-cpp-codeowners
 dependencies.yaml          @rapidsai/packaging-codeowners
 /build.sh                  @rapidsai/packaging-codeowners
 pyproject.toml             @rapidsai/packaging-codeowners
+
+# Ops code owners
+/SECURITY.md             @rapidsai/ops-codeowners

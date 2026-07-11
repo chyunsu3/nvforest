@@ -2,6 +2,23 @@
 Getting started with nvForest
 #############################
 
+Installation
+============
+You can install nvForest using Pip or Conda.
+
+.. code-block:: console
+
+   # Using Pip: need a suffix corresponding to your CUDA version, e.g. for CUDA 13:
+   $ pip install nvforest-cu13
+
+.. code-block:: console
+
+   # Using Conda: need to specify the rapidsai channel
+   $ conda install -c rapidsai -c conda-forge nvforest
+
+You can also install nvForest as part of RAPIDS, a collection of libraries for GPU accelerated data science.
+Visit https://docs.rapids.ai/install/ for more information.
+
 nvForest with Python
 ====================
 
@@ -139,6 +156,29 @@ or its variants.
     assert class_probs.shape == (X.shape[0], fm.num_outputs)
     assert leaf_ids.shape == (X.shape[0], fm.num_trees)
     assert pred_per_tree.shape == (X.shape[0], fm.num_trees)
+
+Auto-optimization
+-----------------
+
+Forest inference capabilities in nvForest allow users to fine-tune performance with a variety of hyperparameters.
+It is impossible to predict what the optimal values will be for any given model and batch size, so it is
+necessary to determine them empirically. nvForest significantly simplifies this process with a built-in method for
+auto-optimization at any given batch size:
+
+.. testcode:: workflow
+
+    fm_optimized = fm.optimize(batch_size=1000)
+
+The :py:meth:`~nvforest.GPUForestInferenceRegressor.optimize` returns a new instance of ``ForestInference``, and
+subsequent prediction calls will use the optimal performance hyperparameters found for the indicated batch size.
+You can also check what hyperparameters were selected by looking at the attributes.
+
+.. testcode:: workflow
+
+    # Optimal layout
+    fm_optimized.layout
+    # Optimal chunk size
+    fm_optimized.default_chunk_size
 
 nvForest with C++ (Advanced)
 ============================
