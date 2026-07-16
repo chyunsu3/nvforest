@@ -3,12 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <nvforest/buffer.hpp>
+#include <nvforest/cuda_stream.hpp>
+#include <nvforest/detail/cuda_check.hpp>
 #include <nvforest/detail/infer_kernel/shared_memory_buffer.cuh>
-#include <nvforest/detail/raft_proto/buffer.hpp>
-#include <nvforest/detail/raft_proto/cuda_check.hpp>
-#include <nvforest/detail/raft_proto/cuda_stream.hpp>
-#include <nvforest/detail/raft_proto/device_type.hpp>
 #include <nvforest/detail/utils.hpp>
+#include <nvforest/device_type.hpp>
 
 #include <cuda_runtime_api.h>
 
@@ -61,19 +61,17 @@ auto run_2d_allocation(index_type row_count,
                        std::size_t source_size)
 {
   auto source_data = std::vector<int>(source_size, 42);
-  auto source =
-    raft_proto::buffer<int>{source_data.begin(), source_data.end(), raft_proto::device_type::gpu};
-  auto result = raft_proto::buffer<allocation_result>{1, raft_proto::device_type::gpu};
+  auto source      = buffer<int>{source_data.begin(), source_data.end(), device_type::gpu};
+  auto result      = buffer<allocation_result>{1, device_type::gpu};
 
   check_2d_allocation<<<1, 32, shared_mem_size>>>(
     source.data(), result.data(), row_count, col_count, row_pad, shared_mem_size);
-  raft_proto::cuda_check(cudaGetLastError());
+  cuda_check(cudaGetLastError());
 
   auto result_data = allocation_result{};
-  auto host_result =
-    raft_proto::buffer<allocation_result>{&result_data, 1, raft_proto::device_type::cpu};
-  raft_proto::copy<true>(host_result, result);
-  raft_proto::cuda_check(cudaStreamSynchronize(raft_proto::cuda_stream{}));
+  auto host_result = buffer<allocation_result>{&result_data, 1, device_type::cpu};
+  copy<true>(host_result, result);
+  cuda_check(cudaStreamSynchronize(cuda_stream{}));
   return result_data;
 }
 
@@ -133,24 +131,23 @@ NVFOREST_KERNEL void check_failed_copy_sync(int* source, unsigned int* completed
 
 TEST(SharedMemoryBuffer, RepeatedlySkipsSyncIfNoCopyOccurs)
 {
-  auto source_data = std::vector<int>{42};
-  auto source =
-    raft_proto::buffer<int>{source_data.begin(), source_data.end(), raft_proto::device_type::gpu};
+  auto source_data    = std::vector<int>{42};
+  auto source         = buffer<int>{source_data.begin(), source_data.end(), device_type::gpu};
   auto completed_data = std::vector<unsigned int>{0};
-  auto completed      = raft_proto::buffer<unsigned int>{
-    completed_data.begin(), completed_data.end(), raft_proto::device_type::gpu};
+  auto completed =
+    buffer<unsigned int>{completed_data.begin(), completed_data.end(), device_type::gpu};
 
   auto constexpr launch_count = 1'000;
   auto constexpr block_count  = 32;
   for (auto i = 0; i < launch_count; ++i) {
     check_failed_copy_sync<<<block_count, 128>>>(source.data(), completed.data());
   }
-  raft_proto::cuda_check(cudaGetLastError());
+  cuda_check(cudaGetLastError());
 
-  auto host_completed = raft_proto::buffer<unsigned int>{
-    completed_data.data(), completed_data.size(), raft_proto::device_type::cpu};
-  raft_proto::copy<true>(host_completed, completed);
-  raft_proto::cuda_check(cudaStreamSynchronize(raft_proto::cuda_stream{}));
+  auto host_completed =
+    buffer<unsigned int>{completed_data.data(), completed_data.size(), device_type::cpu};
+  copy<true>(host_completed, completed);
+  cuda_check(cudaStreamSynchronize(cuda_stream{}));
   EXPECT_EQ(completed_data[0], launch_count * block_count);
 }
 
