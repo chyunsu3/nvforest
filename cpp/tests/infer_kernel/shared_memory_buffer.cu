@@ -66,12 +66,12 @@ auto run_2d_allocation(index_type row_count,
 
   check_2d_allocation<<<1, 32, shared_mem_size>>>(
     source.data(), result.data(), row_count, col_count, row_pad, shared_mem_size);
-  cuda_check(cudaGetLastError());
+  detail::cuda_check(cudaGetLastError());
 
   auto result_data = allocation_result{};
   auto host_result = buffer<allocation_result>{&result_data, 1, device_type::cpu};
   copy<true>(host_result, result);
-  cuda_check(cudaStreamSynchronize(cuda_stream{}));
+  detail::cuda_check(cudaStreamSynchronize(cuda_stream{}));
   return result_data;
 }
 
@@ -142,12 +142,12 @@ TEST(SharedMemoryBuffer, RepeatedlySkipsSyncIfNoCopyOccurs)
   for (auto i = 0; i < launch_count; ++i) {
     check_failed_copy_sync<<<block_count, 128>>>(source.data(), completed.data());
   }
-  cuda_check(cudaGetLastError());
+  detail::cuda_check(cudaGetLastError());
 
   auto host_completed =
     buffer<unsigned int>{completed_data.data(), completed_data.size(), device_type::cpu};
   copy<true>(host_completed, completed);
-  cuda_check(cudaStreamSynchronize(cuda_stream{}));
+  detail::cuda_check(cudaStreamSynchronize(cuda_stream{}));
   EXPECT_EQ(completed_data[0], launch_count * block_count);
 }
 
