@@ -18,14 +18,21 @@ struct handle_t {
   handle_t(raft::handle_t const& raft_handle) : raft_handle_{&raft_handle} {}
   auto get_next_usable_stream() const
   {
+    if (!raft_handle_) { return cuda_stream{}; }
     return cuda_stream{raft_handle_->get_next_usable_stream().value()};
   }
-  auto get_stream_pool_size() const { return raft_handle_->get_stream_pool_size(); }
+  auto get_stream_pool_size() const
+  {
+    if (!raft_handle_) { return std::size_t{}; }
+    return raft_handle_->get_stream_pool_size();
+  }
   auto get_usable_stream_count() const { return std::max(get_stream_pool_size(), std::size_t{1}); }
   void synchronize() const
   {
-    raft_handle_->sync_stream_pool();
-    raft_handle_->sync_stream();
+    if (raft_handle_) {
+      raft_handle_->sync_stream_pool();
+      raft_handle_->sync_stream();
+    }
   }
 
  private:
