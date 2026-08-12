@@ -17,6 +17,26 @@ fm = nvforest.load_model("/path/to/xgboost_model.ubj", device="gpu",
 pred = fm.predict(X)
 ```
 
+To run GPU work on a caller-managed CUDA stream, pass a `cuda.core.Stream`
+created on the model's device. If omitted, nvForest creates and retains a stream
+for the model:
+
+```python
+from cuda.core import Device
+
+device = Device(0)
+device.set_current()
+stream = device.create_stream()
+
+fm = nvforest.load_model(
+    "/path/to/xgboost_model.ubj",
+    device="gpu",
+    device_id=0,
+    stream=stream,
+)
+pred = fm.predict(X)
+```
+
 Load a scikit-learn random forest model and get class probabilities:
 
 ```python
