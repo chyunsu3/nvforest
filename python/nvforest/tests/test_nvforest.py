@@ -798,22 +798,13 @@ def test_missing_categorical(category_list):
     input = np.array([[np.nan]])
     gtil_preds = treelite.gtil.predict(model, input)
     fm = nvforest.load_from_treelite_model(model)
-    fil_preds = _get_numpy_array(fm.predict(input))
-    np.testing.assert_equal(fil_preds.flatten(), gtil_preds.flatten())
+    nvforest_preds = _get_numpy_array(fm.predict(input))
+    np.testing.assert_equal(nvforest_preds.flatten(), gtil_preds.flatten())
 
 
 @pytest.mark.parametrize("device_id", [None, 0, 1, 2])
 @pytest.mark.parametrize("model_kind", ["sklearn", "xgboost"])
 def test_device_selection(device_id, model_kind, tmp_path):
-    import sklearn
-    from packaging.version import Version
-
-    # TODO(hcho3): Remove this once Rapids adopts XGBoost 3.1.3
-    if model_kind == "xgboost" and Version(sklearn.__version__) >= Version(
-        "1.8.0.dev0"
-    ):
-        pytest.skip("xgboost is incompatible with sklearn >= 1.8.0.dev0")
-
     current_device = cp.cuda.runtime.getDevice()
 
     if device_id is not None and device_id >= cp.cuda.runtime.getDeviceCount():
