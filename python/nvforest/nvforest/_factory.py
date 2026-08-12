@@ -7,7 +7,6 @@ import pathlib
 from typing import Any, Optional, Union
 
 import treelite
-from cuda.core import Stream
 
 from nvforest._base import ForestInference
 from nvforest._forest_inference import (
@@ -18,6 +17,7 @@ from nvforest._forest_inference import (
     infer_device,
     infer_is_classifier,
 )
+from nvforest._typing import StreamLike
 
 
 def get_forest_inference_class(device, is_classifier) -> type:
@@ -39,7 +39,7 @@ def make_forest_inference_object(
     treelite_model: treelite.Model,
     device: str,
     device_id: Optional[int],
-    stream: Optional[Stream],
+    stream: Optional[StreamLike],
     layout: str,
     default_chunk_size: Optional[int],
     align_bytes: Optional[int],
@@ -72,7 +72,7 @@ def load_model(
     align_bytes: Optional[int] = None,
     precision: Optional[str] = None,
     device_id: Optional[int] = None,
-    stream: Optional[Stream] = None,
+    stream: Optional[StreamLike] = None,
 ) -> ForestInference:
     """Load a model into nvForest from a serialized model file.
 
@@ -113,7 +113,7 @@ def load_model(
     device_id : int or None, default=None
         For GPU execution, the device on which to load and execute this
         model. For CPU execution, this value is currently ignored.
-    stream : cuda.core.Stream or None, default=None
+    stream : StreamLike or None, default=None
         For GPU execution, the CUDA stream to use during model loading and
         inference. If not given, a new stream will be created. For CPU
         execution, this value is ignored.
@@ -174,7 +174,7 @@ def load_from_sklearn(
     align_bytes: Optional[int] = None,
     precision: Optional[str] = None,
     device_id: Optional[int] = None,
-    stream: Optional[Stream] = None,
+    stream: Optional[StreamLike] = None,
 ) -> ForestInference:
     """Load a Scikit-Learn forest model to nvForest
 
@@ -208,7 +208,7 @@ def load_from_sklearn(
     device_id : int or None, default=None
         For GPU execution, the device on which to load and execute this
         model. For CPU execution, this value is currently ignored.
-    stream : cuda.core.Stream or None, default=None
+    stream : StreamLike or None, default=None
         For GPU execution, the CUDA stream to use during model loading and
         inference. If not given, a new stream will be created. For CPU
         execution, this value is ignored.
@@ -236,7 +236,7 @@ def load_from_treelite_model(
     align_bytes: Optional[int] = None,
     precision: Optional[str] = None,
     device_id: Optional[int] = None,
-    stream: Optional[Stream] = None,
+    stream: Optional[StreamLike] = None,
 ) -> ForestInference:
     """Load a Treelite forest model to nvForest
 
@@ -270,7 +270,7 @@ def load_from_treelite_model(
     device_id : int or None, default=None
         For GPU execution, the device on which to load and execute this
         model. For CPU execution, this value is currently ignored.
-    stream : cuda.core.Stream or None, default=None
+    stream : StreamLike or None, default=None
         For GPU execution, the CUDA stream to use during model loading and
         inference. If not given, a new stream will be created. For CPU
         execution, this value is ignored.

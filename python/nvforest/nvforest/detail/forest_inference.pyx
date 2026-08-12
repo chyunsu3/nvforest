@@ -7,9 +7,9 @@ from typing import Optional, Union
 
 import numpy as np
 import treelite
-from cuda.core import Device, Stream
+from cuda.core import Device
 
-from nvforest._typing import DataType
+from nvforest._typing import DataType, StreamLike
 from nvforest.detail.treelite import safe_treelite_call
 
 from libc.stdint cimport uint32_t, uintptr_t
@@ -78,11 +78,14 @@ cdef class ForestInference_impl():
         device: str = "cpu",
         device_id: Optional[int] = None,
     ):
+        # Assumption: The caller needs to pass in correct (device, device_id) pair
+        # This function will not contain any logic for auto-detecting device.
         cdef uintptr_t stream_ptr = 0
         if stream is not None:
-            if not isinstance(stream, Stream):
-                raise TypeError("stream must be a cuda.core.Stream or None")
-            stream_ptr = <uintptr_t>int(stream.handle)
+            if not isinstance(stream, StreamLike):
+                raise TypeError("stream must be a stream-like object or None")
+            stream_tuple: tuple[int, int] = stream.__cuda_stream__()
+            stream_ptr = <uintptr_t>stream_tuple[1]
         self.stream = stream
         self.stream_handle = <nvforest_stream_t>stream_ptr
 
@@ -272,7 +275,7 @@ class ForestInferenceImpl:
         treelite_model: treelite.Model,
         device: str,
         device_id: int,
-        stream: Optional[Stream] = None,
+        stream: Optional[StreamLike] = None,
         layout: str = "depth_first",
         default_chunk_size: Optional[int] = None,
         align_bytes: Optional[int] = None,
@@ -280,8 +283,8 @@ class ForestInferenceImpl:
     ):
         # Assumption: The caller needs to pass in correct (device, device_id) pair
         # This function will not contain any logic for auto-detecting device.
-        if stream is not None and not isinstance(stream, Stream):
-            raise TypeError("stream must be a cuda.core.Stream or None")
+        if stream is not None and not isinstance(stream, StreamLike):
+            raise TypeError("stream must be a stream-like object or None")
         if device == "gpu" and stream is None:
             previous_device = Device()
             try:

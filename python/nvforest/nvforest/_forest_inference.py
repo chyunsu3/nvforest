@@ -16,10 +16,9 @@ except ImportError:
 import numpy as np
 import treelite
 from cuda.bindings import runtime
-from cuda.core import Stream
 
 from nvforest._base import ForestInferenceClassifier, ForestInferenceRegressor
-from nvforest._typing import DataType
+from nvforest._typing import DataType, StreamLike
 from nvforest.detail.forest_inference import ForestInferenceImpl
 
 
@@ -123,7 +122,7 @@ class OptimizeMixin:
         cls,
         *,
         treelite_model_bytes: bytes,
-        stream: Optional[Stream],
+        stream: Optional[StreamLike],
         layout: str,
         default_chunk_size: Optional[int],
         align_bytes: Optional[int],
@@ -260,7 +259,7 @@ class CPUForestInferenceClassifier(
         self,
         *,
         treelite_model: treelite.Model,
-        stream: Optional[Stream] = None,
+        stream: Optional[StreamLike] = None,
         layout: str = "depth_first",
         default_chunk_size: Optional[int] = None,
         align_bytes: Optional[int] = None,
@@ -284,7 +283,7 @@ class CPUForestInferenceClassifier(
         cls,
         *,
         treelite_model_bytes: bytes,
-        stream: Optional[Stream],
+        stream: Optional[StreamLike],
         layout: str,
         default_chunk_size: Optional[int],
         align_bytes: Optional[int],
@@ -397,7 +396,7 @@ class CPUForestInferenceRegressor(OptimizeMixin, ForestInferenceRegressor):
         self,
         *,
         treelite_model: treelite.Model,
-        stream: Optional[Stream] = None,
+        stream: Optional[StreamLike] = None,
         layout: str = "depth_first",
         default_chunk_size: Optional[int] = None,
         align_bytes: Optional[int] = None,
@@ -421,7 +420,7 @@ class CPUForestInferenceRegressor(OptimizeMixin, ForestInferenceRegressor):
         cls,
         *,
         treelite_model_bytes: bytes,
-        stream: Optional[Stream],
+        stream: Optional[StreamLike],
         layout: str,
         default_chunk_size: Optional[int],
         align_bytes: Optional[int],
@@ -526,7 +525,7 @@ class GPUForestInferenceClassifier(
         self,
         *,
         treelite_model: treelite.Model,
-        stream: Optional[Stream] = None,
+        stream: Optional[StreamLike] = None,
         layout: str = "depth_first",
         default_chunk_size: Optional[int] = None,
         align_bytes: Optional[int] = None,
@@ -551,7 +550,7 @@ class GPUForestInferenceClassifier(
         cls,
         *,
         treelite_model_bytes: bytes,
-        stream: Optional[Stream],
+        stream: Optional[StreamLike],
         layout: str,
         default_chunk_size: Optional[int],
         align_bytes: Optional[int],
@@ -665,7 +664,7 @@ class GPUForestInferenceRegressor(OptimizeMixin, ForestInferenceRegressor):
         self,
         *,
         treelite_model: treelite.Model,
-        stream: Optional[Stream] = None,
+        stream: Optional[StreamLike] = None,
         layout: str = "depth_first",
         default_chunk_size: Optional[int] = None,
         align_bytes: Optional[int] = None,
@@ -690,7 +689,7 @@ class GPUForestInferenceRegressor(OptimizeMixin, ForestInferenceRegressor):
         cls,
         *,
         treelite_model_bytes: bytes,
-        stream: Optional[Stream],
+        stream: Optional[StreamLike],
         layout: str,
         default_chunk_size: Optional[int],
         align_bytes: Optional[int],

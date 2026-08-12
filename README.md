@@ -34,7 +34,7 @@ fm = nvforest.load_model(
     device_id=0,
     stream=stream,
 )
-pred = fm.predict(X)
+pred = fm.predict(X)  # Note: automatically syncs the stream
 ```
 
 Load a scikit-learn random forest model and get class probabilities:
