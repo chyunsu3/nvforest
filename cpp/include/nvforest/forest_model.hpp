@@ -153,14 +153,16 @@ struct forest_model {
             auto row_count = input.size() / num_features();
             auto buffer_in = buffer<io_t>{};
             if (input.memory_type() != memory_type()) {
-              buffer_in = buffer<io_t>{row_count * num_features(), memory_type(), stream};
+              buffer_in =
+                buffer<io_t>{row_count * num_features(), memory_type(), device_index(), stream};
               copy<detail::DEBUG_ENABLED>(buffer_in, input, 0, 0, buffer_in.size(), stream);
             } else {
               buffer_in = buffer<io_t>{input.data(), row_count * num_features(), memory_type()};
             }
             auto buffer_out = buffer<io_t>{};
             if (output.memory_type() != memory_type()) {
-              buffer_out = buffer<io_t>{row_count * num_outputs(), memory_type(), stream};
+              buffer_out =
+                buffer<io_t>{row_count * num_outputs(), memory_type(), device_index(), stream};
             } else {
               buffer_out = buffer<io_t>{output.data(), row_count * num_outputs(), memory_type()};
             }
