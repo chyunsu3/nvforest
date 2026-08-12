@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import treelite
+from cuda.core import Device, Stream
 
 # Import XGBoost before scikit-learn to work around a libgomp bug
 # See https://github.com/dmlc/xgboost/issues/7110
@@ -887,6 +888,36 @@ def test_device_selection(device_id, model_kind, tmp_path):
 
     # 6. The section above didn't corrupt current device context
     assert cp.cuda.runtime.getDevice() == current_device
+
+
+def test_cuda_core_stream():
+    previous_device = Device()
+    try:
+        device = Device(0)
+        device.set_current()
+        stream = device.create_stream()
+
+        X, y = _simulate_data(
+            100, 8, n_informative=2, random_state=0, classification=True
+        )
+        skl_model = RandomForestClassifier(
+            max_depth=3, random_state=0, n_estimators=5
+        ).fit(X, y)
+        default_fm = nvforest.load_from_sklearn(
+            skl_model, device="gpu", device_id=0
+        )
+        fm = nvforest.load_from_sklearn(
+            skl_model, device="gpu", device_id=0, stream=stream
+        )
+
+        assert isinstance(default_fm.forest.stream, Stream)
+        assert isinstance(stream, Stream)
+        assert fm.forest.stream is stream
+        np.testing.assert_array_equal(
+            cp.asnumpy(fm.predict(X)), skl_model.predict(X)
+        )
+    finally:
+        previous_device.set_current()
 
 
 def test_wide_data():

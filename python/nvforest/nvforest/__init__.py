@@ -1,5 +1,5 @@
 #
-# SPDX-FileCopyrightText: Copyright (c) 2022-2026, NVIDIA CORPORATION.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 
@@ -24,7 +24,6 @@ from nvforest._forest_inference import (
     GPUForestInferenceClassifier,
     GPUForestInferenceRegressor,
 )
-from nvforest._handle import Handle
 from nvforest._version import __git_commit__, __version__
 
 __all__ = [
@@ -32,7 +31,6 @@ __all__ = [
     "CPUForestInferenceRegressor",
     "GPUForestInferenceClassifier",
     "GPUForestInferenceRegressor",
-    "Handle",
     "load_model",
     "load_from_sklearn",
     "load_from_treelite_model",
