@@ -24,12 +24,7 @@ In addition, nvForest requires Cython 3.0 or later.
 **Relation to RAPIDS**
 The nvForest code base is updated in tandem with the rest of RAPIDS. For example, nvForest 26.08 will be released
 together with 26.08 version of other RAPIDS packages. However, it is possible to build and install nvForest
-without installing RAPIDS. Only `CCCL <https://nvidia.github.io/cccl>`_ is required.
-
-**Python dependencies.**
-nvForest uses `CUDA Python <https://developer.nvidia.com/cuda/python>`_. In addition, nvForest requires
-Treelite, cuPy, and scikit-learn.
-We aim to meet the `SPEC 0 guidelines <https://scientific-python.org/specs/spec-0000/>`_ for minimal supported versions.
+without installing RAPIDS.
 
 **For development only.**
 

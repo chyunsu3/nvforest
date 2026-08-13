@@ -131,10 +131,10 @@ You can inspect the type of the model by printing its type:
 CUDA stream selection
 ---------------------
 
-GPU model loading and inference run on a :external+cuda-python:py:class:`cuda.core.Stream`.
-If ``stream`` is omitted, nvForest creates a stream on the selected GPU and keeps it alive
-for the lifetime of the model. To supply your own stream, create it on the same device as
-``device_id`` and pass it to any model-loading function:
+By default, nvForest creates a new
+`CUDA stream <https://docs.nvidia.com/cuda/cuda-programming-guide/02-basics/asynchronous-execution.html#cuda-streams>`_
+for a GPU model. To use a custom stream, pass in a :external+cuda-python:py:class:`cuda.core.Stream` (or
+any stream-like object [#]_) via the ``stream`` parameter. A supplied stream must be associated with the same device as ``device_id``.
 
 .. code-block:: python
 
@@ -151,6 +151,9 @@ for the lifetime of the model. To supply your own stream, create it on the same 
 
 nvForest retains a reference to a caller-supplied stream. Python prediction methods synchronize
 the model's stream before returning, so their results are ready for immediate use.
+
+.. [#] A stream-like object is an object that exposes a method named `__cuda_stream__`.
+       See `Stream Protocol <https://nvidia.github.io/cuda-python/cuda-core/latest/interoperability.html#cuda-stream-protocol>`_ for more details.
 
 Running inference
 -----------------

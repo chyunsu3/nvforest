@@ -17,9 +17,13 @@ fm = nvforest.load_model("/path/to/xgboost_model.ubj", device="gpu",
 pred = fm.predict(X)
 ```
 
-To run GPU work on a caller-managed CUDA stream, pass a `cuda.core.Stream`
-created on the model's device. If omitted, nvForest creates and retains a stream
-for the model:
+By default, nvForest creates a new
+[CUDA stream](https://docs.nvidia.com/cuda/cuda-programming-guide/02-basics/asynchronous-execution.html#cuda-streams)
+for the model and retains it. To use a custom stream, pass in a :external+cuda-python:py:class:`cuda.core.Stream` or
+other stream-like objects (*):
+
+(*) A stream-like object is an object that exposes a method named `__cuda_stream__`. See [Stream Protocol](
+https://nvidia.github.io/cuda-python/cuda-core/latest/interoperability.html#cuda-stream-protocol) for more details.
 
 ```python
 from cuda.core import Device
