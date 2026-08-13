@@ -309,7 +309,7 @@ elseif(NVFOREST_EXPORT_TREELITE_LINKAGE)
 endif()
 
 if(NVFOREST_ENABLE_GPU)
-  list(APPEND _nvforest_cpp_public_libs CUDA::cudart_static)
+  list(APPEND _nvforest_cpp_public_libs CUDA::cudart_static CCCL::CCCL)
 endif()
 
 # These are always private:
