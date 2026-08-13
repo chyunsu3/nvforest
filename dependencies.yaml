@@ -129,6 +129,7 @@ files:
       table: project
     includes:
       - depends_on_cuda_python
+      - depends_on_cuda_core
       - depends_on_cupy
       - depends_on_libnvforest
       - depends_on_pylibraft
