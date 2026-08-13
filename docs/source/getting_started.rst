@@ -280,6 +280,14 @@ Now that the tree model is fully imported into nvForest, let's run inference:
     // Wait before reading or freeing output.
     cudaStreamSynchronize(stream);
 
+    // Use output
+    // ...
+
+    // Clean up
+    fm.reset();
+    cudaStreamDestroy(stream);
+    // ... also free input, output buffers
+
 Use a stream associated with the same device as the model. Reusing the stream for import and
 inference preserves the ordering between model initialization and prediction without an
 additional synchronization. Keep the stream alive until the model is destroyed and all queued
