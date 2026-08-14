@@ -59,7 +59,7 @@ TEST(InvalidStream, wrong_device)
     detail::cuda_check(cudaStreamCreate(&stream));
   }
 
-  // Loading a model on device 0 and inferencing on device 1 is a ner
+  // Loading a model on device 0 and inferencing on device 1 is an error.
   auto tl_model       = model_builder->CommitModel();
   auto nvforest_model = import_from_treelite_model(
     *tl_model, tree_layout::breadth_first, index_type{}, false, device_type::gpu, 0, stream);
