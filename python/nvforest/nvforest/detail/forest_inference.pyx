@@ -31,12 +31,12 @@ from nvforest.detail.treelite cimport (
 cdef extern from "nvforest/forest_model.hpp" namespace "nvforest" nogil:
     cdef cppclass forest_model:
         void predict[io_t](
+            nvforest_stream_t,
             io_t*,
             io_t*,
             size_t,
             nvforest_device_t,
             nvforest_device_t,
-            nvforest_stream_t,
             infer_kind,
             optional[uint32_t]
         ) except +
@@ -242,23 +242,23 @@ cdef class ForestInference_impl():
 
         if model_dtype == np.float32:
             self.model.predict[float](
+                self.stream_handle,
                 <float *> out_ptr,
                 <float *> in_ptr,
                 n_rows,
                 out_dev,
                 in_dev,
-                self.stream_handle,
                 infer_type_enum,
                 chunk_specification
             )
         else:
             self.model.predict[double](
+                self.stream_handle,
                 <double *> out_ptr,
                 <double *> in_ptr,
                 n_rows,
                 out_dev,
                 in_dev,
-                self.stream_handle,
                 infer_type_enum,
                 chunk_specification
             )

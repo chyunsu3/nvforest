@@ -116,12 +116,12 @@ struct forest_model {
   /**
    * Perform inference on given input
    *
-   * @param[out] output The buffer where model output should be stored.
-   * This must be of size at least ROWS x num_outputs().
-   * @param[in] input The buffer containing input data.
    * @param[in] stream A nvforest::cuda_stream, which (on GPU-enabled builds) is
    * a transparent wrapper for the cudaStream_t or (on CPU-only builds) a
    * CUDA-free placeholder object.
+   * @param[out] output The buffer where model output should be stored.
+   * This must be of size at least ROWS x num_outputs().
+   * @param[in] input The buffer containing input data.
    * @param[in] predict_type Type of inference to perform. Defaults to summing
    * the outputs of all trees and produce an output per row. If set to
    * "per_tree", we will instead output all outputs of individual trees.
@@ -137,9 +137,9 @@ struct forest_model {
    * reasonable value. On CPU, this argument can generally just be omitted.
    */
   template <typename io_t>
-  void predict(buffer<io_t>& output,
+  void predict(cuda_stream stream,
+               buffer<io_t>& output,
                buffer<io_t> const& input,
-               cuda_stream stream                             = cuda_stream{},
                infer_kind predict_type                        = infer_kind::default_kind,
                std::optional<index_type> specified_chunk_size = std::nullopt)
   {
@@ -183,6 +183,10 @@ struct forest_model {
   /**
    * Perform inference on given input
    *
+   * @param[in] stream A nvforest::cuda_stream, which (on GPU-enabled builds) is
+   * a transparent wrapper for the cudaStream_t or (on CPU-only builds) a
+   * CUDA-free placeholder object. If this argument is cudaStream_t, ensure
+   * that this stream is associated with the same GPU device as the model object.
    * @param[out] output Pointer to the memory location where output should end
    * up
    * @param[in] input Pointer to the input data
@@ -190,10 +194,6 @@ struct forest_model {
    * @param[in] out_mem_type The memory type (device/host) of the output
    * buffer
    * @param[in] in_mem_type The memory type (device/host) of the input buffer
-   * @param[in] stream A nvforest::cuda_stream, which (on GPU-enabled builds) is
-   * a transparent wrapper for the cudaStream_t or (on CPU-only builds) a
-   * CUDA-free placeholder object. If this argument is cudaStream_t, ensure
-   * that this stream is associated with the same GPU device as the model object.
    * @param[in] predict_type Type of inference to perform. Defaults to summing
    * the outputs of all trees and produce an output per row. If set to
    * "per_tree", we will instead output all outputs of individual trees.
@@ -209,12 +209,12 @@ struct forest_model {
    * reasonable value. On CPU, this argument can generally just be omitted.
    */
   template <typename io_t>
-  void predict(io_t* output,
+  void predict(cuda_stream stream,
+               io_t* output,
                io_t* input,
                std::size_t num_rows,
                device_type out_mem_type,
                device_type in_mem_type,
-               cuda_stream stream                             = cuda_stream{},
                infer_kind predict_type                        = infer_kind::default_kind,
                std::optional<index_type> specified_chunk_size = std::nullopt)
   {
@@ -230,7 +230,7 @@ struct forest_model {
     }
     auto out_buffer = buffer{output, num_rows * num_outputs(), out_mem_type, current_device_id};
     auto in_buffer  = buffer{input, num_rows * num_features(), in_mem_type, current_device_id};
-    predict(out_buffer, in_buffer, stream, predict_type, specified_chunk_size);
+    predict(stream, out_buffer, in_buffer, predict_type, specified_chunk_size);
   }
 
  private:

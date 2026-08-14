@@ -385,12 +385,12 @@ TEST(TreeliteImporter, DegenerateTree)
   auto X              = std::vector<double>{0.0};
   auto preds          = std::vector<double>(1, 0.0);
   auto expected_preds = std::vector<double>{1.0};
-  nvforest_model.predict(preds.data(),
+  nvforest_model.predict(nvforest::cuda_stream{},
+                         preds.data(),
                          X.data(),
                          1,
                          nvforest::device_type::cpu,
                          nvforest::device_type::cpu,
-                         nvforest::cuda_stream{},
                          nvforest::infer_kind::default_kind,
                          1);
   ASSERT_EQ(preds, expected_preds);
@@ -405,12 +405,12 @@ TEST(TreeliteImporter, DegenerateTreeWithVectorLeaf)
   auto X              = std::vector<double>{0.0};
   auto preds          = std::vector<double>(2, 0.0);
   auto expected_preds = std::vector<double>{0.5, 0.5};
-  nvforest_model.predict(preds.data(),
+  nvforest_model.predict(nvforest::cuda_stream{},
+                         preds.data(),
                          X.data(),
                          1,
                          nvforest::device_type::cpu,
                          nvforest::device_type::cpu,
-                         nvforest::cuda_stream{},
                          nvforest::infer_kind::default_kind,
                          1);
   ASSERT_EQ(preds, expected_preds);
