@@ -44,16 +44,15 @@ inline auto compute_output_size(index_type row_output_size,
 }
 
 // If a non-default stream is provided, it must reside on the correct device.
-inline void validate_stream(device_id<device_type::gpu> device, cuda_stream stream)
+inline void validate_stream(device_id<device_type::gpu> device, cuda::stream_ref stream)
 {
   cuda::stream_ref legacy_default_stream{cudaStreamLegacy};
   cuda::stream_ref per_thread_default_stream{cudaStreamPerThread};
-  cuda::stream_ref stream_wrapped{stream};
-  if (stream_wrapped != legacy_default_stream && stream_wrapped != per_thread_default_stream &&
-      stream_wrapped.device().get() != device.value()) {
+  if (stream != legacy_default_stream && stream != per_thread_default_stream &&
+      stream.device().get() != device.value()) {
     throw std::runtime_error{std::string("Stream on the wrong device. ") +
                              "Expected: " + std::to_string(device.value()) +
-                             ", Actual: " + std::to_string(stream_wrapped.device().get())};
+                             ", Actual: " + std::to_string(stream.device().get())};
   }
 }
 
@@ -115,7 +114,7 @@ std::enable_if_t<D == device_type::gpu, void> infer(
 {
   using output_t = typename forest_t::template raw_output_type<vector_output_t>;
 
-  validate_stream(device, stream);
+  validate_stream(device, cuda::stream_ref{stream});
 
   auto sm_count                       = get_sm_count(device);
   auto const max_shared_mem_per_block = get_max_shared_mem_per_block(device);
