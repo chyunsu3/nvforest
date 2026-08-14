@@ -21,6 +21,8 @@
 #include <nvforest/exceptions.hpp>
 #include <nvforest/infer_kind.hpp>
 
+#include <cuda/stream>
+
 #include <cstddef>
 #include <cstdint>
 #include <optional>
@@ -39,6 +41,20 @@ inline auto compute_output_size(index_type row_output_size,
     result *= ceildiv(threads_per_block, rows_per_block_iteration);
   }
   return result;
+}
+
+// If a non-default stream is provided, it must reside on the correct device.
+inline void validate_stream(device_id<device_type::gpu> device, cuda_stream stream)
+{
+  cuda::stream_ref legacy_default_stream{cudaStreamLegacy};
+  cuda::stream_ref per_thread_default_stream{cudaStreamPerThread};
+  cuda::stream_ref stream_wrapped{stream};
+  if (stream_wrapped != legacy_default_stream && stream_wrapped != per_thread_default_stream &&
+      stream_wrapped.device().get() != device.value()) {
+    throw std::runtime_error{std::string("Stream on the wrong device. ") +
+                             "Expected: " + std::to_string(device.value()) +
+                             ", Actual: " + std::to_string(stream_wrapped.device().get())};
+  }
 }
 
 /* A wrapper around the underlying inference kernels to support dispatching to
@@ -98,6 +114,8 @@ std::enable_if_t<D == device_type::gpu, void> infer(
   cuda_stream stream                             = cuda_stream{})
 {
   using output_t = typename forest_t::template raw_output_type<vector_output_t>;
+
+  validate_stream(device, stream);
 
   auto sm_count                       = get_sm_count(device);
   auto const max_shared_mem_per_block = get_max_shared_mem_per_block(device);
