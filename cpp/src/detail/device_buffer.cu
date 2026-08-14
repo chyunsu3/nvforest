@@ -45,6 +45,6 @@ owning_device_buffer_type_erased& owning_device_buffer_type_erased::operator=(
   owning_device_buffer_type_erased&& other) noexcept                  = default;
 owning_device_buffer_type_erased::~owning_device_buffer_type_erased() = default;
 
-std::byte* owning_device_buffer_type_erased::get() { return impl_->get(); }
+std::byte* owning_device_buffer_type_erased::get() { return impl_ ? impl_->get() : nullptr; }
 
 }  // namespace nvforest::detail

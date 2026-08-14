@@ -7,7 +7,7 @@ from typing import Optional, Union
 
 import numpy as np
 import treelite
-from cuda.core import Device
+from cuda.core import Device, Stream
 
 from nvforest._typing import DataType, StreamLike
 from nvforest.detail.treelite import safe_treelite_call
@@ -80,14 +80,17 @@ cdef class ForestInference_impl():
     ):
         # Assumption: The caller needs to pass in correct (device, device_id) pair
         # This function will not contain any logic for auto-detecting device.
+        # Assumption: The caller should convert a user-provided stream-like object
+        # into cuda.core.Stream before constructing ForestInference_impl()
         cdef uintptr_t stream_ptr = 0
         if stream is not None:
-            if not isinstance(stream, StreamLike):
-                raise TypeError("stream must be a stream-like object or None")
-            stream_tuple: tuple[int, int] = stream.__cuda_stream__()
-            if len(stream_tuple) != 2 or stream_tuple[0] != 0:
-                raise TypeError("stream must use the version 0 stream protocol")
-            stream_ptr = <uintptr_t>stream_tuple[1]
+            # Use assertion here, since the failure here indicates a bug, not
+            # a user error.
+            assert isinstance(stream, Stream), (
+                "stream must be converted to cuda.core.Stream before "
+                "building ForestInference_impl()"
+            )
+            stream_ptr = <uintptr_t>int(stream.handle)
         self.stream = stream
         self.stream_handle = <nvforest_stream_t>stream_ptr
 
@@ -287,14 +290,19 @@ class ForestInferenceImpl:
         # This function will not contain any logic for auto-detecting device.
         if stream is not None and not isinstance(stream, StreamLike):
             raise TypeError("stream must be a stream-like object or None")
-        if device == "gpu" and stream is None:
+        if device == "gpu":
             previous_device = Device()
             try:
                 cuda_device = Device(device_id)
                 cuda_device.set_current()
-                stream = cuda_device.create_stream()
+                if stream is None:
+                    stream = cuda_device.create_stream()
+                else:
+                    stream = cuda_device.create_stream(stream)
             finally:
                 previous_device.set_current()
+        else:
+            assert device == "cpu"
         if device == "gpu" and stream.device.device_id != device_id:
             raise ValueError(
                 f"stream is associated with device {stream.device.device_id}, "
