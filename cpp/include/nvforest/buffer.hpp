@@ -13,8 +13,6 @@
 #include <nvforest/detail/owning_buffer.hpp>
 #include <nvforest/device_type.hpp>
 
-#include <cuda/stream>
-
 #include <stdint.h>
 
 #include <cstddef>
@@ -59,8 +57,7 @@ struct buffer {
         switch (mem_type) {
           case device_type::cpu: result = detail::owning_buffer<device_type::cpu, T>{size}; break;
           case device_type::gpu:
-            result = detail::owning_buffer<device_type::gpu, T>{
-              std::get<1>(device_), size, cuda::stream_ref{stream}};
+            result = detail::owning_buffer<device_type::gpu, T>{std::get<1>(device_), size, stream};
             break;
         }
         return result;
@@ -141,8 +138,8 @@ struct buffer {
           result_data = buf.get();
           result      = std::move(buf);
         } else if (mem_type == device_type::gpu) {
-          auto buf = detail::owning_buffer<device_type::gpu, T>(
-            std::get<1>(device_), other.size(), cuda::stream_ref{stream});
+          auto buf =
+            detail::owning_buffer<device_type::gpu, T>(std::get<1>(device_), other.size(), stream);
           result_data = buf.get();
           result      = std::move(buf);
         }
@@ -215,8 +212,7 @@ struct buffer {
             result_data = buf.get();
             result      = std::move(buf);
           } else if (mem_type == device_type::gpu) {
-            auto buf = detail::owning_buffer<device_type::gpu, T>{
-              device, other.size(), cuda::stream_ref{stream}};
+            auto buf    = detail::owning_buffer<device_type::gpu, T>{device, other.size(), stream};
             result_data = buf.get();
             result      = std::move(buf);
           }

@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #pragma once
+#include <nvforest/cuda_stream.hpp>
 #include <nvforest/detail/device_id.hpp>
 #include <nvforest/detail/owning_buffer/base.hpp>
 #include <nvforest/device_type.hpp>
@@ -39,8 +40,8 @@ struct owning_buffer<device_type::gpu, T> {
   owning_buffer()  = default;
   owning_buffer(device_id<device_type::gpu> device_id,
                 std::size_t size,
-                cuda::stream_ref stream) noexcept(false)
-    : data_{device_id, size * sizeof(value_type), stream}
+                cuda_stream stream) noexcept(false)
+    : data_{device_id, size * sizeof(value_type), cuda::stream_ref{stream}}
   {
   }
 
