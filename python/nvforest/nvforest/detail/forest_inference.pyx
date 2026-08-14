@@ -85,6 +85,8 @@ cdef class ForestInference_impl():
             if not isinstance(stream, StreamLike):
                 raise TypeError("stream must be a stream-like object or None")
             stream_tuple: tuple[int, int] = stream.__cuda_stream__()
+            if len(stream_tuple) != 2 or stream_tuple[0] != 0:
+                raise TypeError("stream must use the version 0 stream protocol")
             stream_ptr = <uintptr_t>stream_tuple[1]
         self.stream = stream
         self.stream_handle = <nvforest_stream_t>stream_ptr
