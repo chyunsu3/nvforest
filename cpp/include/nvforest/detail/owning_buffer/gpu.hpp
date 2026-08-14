@@ -7,6 +7,7 @@
 #include <nvforest/detail/owning_buffer/base.hpp>
 #include <nvforest/device_type.hpp>
 
+#include <cuda/stream>
 #include <cuda_runtime_api.h>
 
 #include <cstddef>
@@ -21,7 +22,7 @@ struct owning_device_buffer_type_erased {
   owning_device_buffer_type_erased();
   owning_device_buffer_type_erased(device_id<device_type::gpu> device_id,
                                    std::size_t size,
-                                   cudaStream_t stream);
+                                   cuda::stream_ref stream);
   owning_device_buffer_type_erased(owning_device_buffer_type_erased&& other) noexcept;
   owning_device_buffer_type_erased& operator=(owning_device_buffer_type_erased&& other) noexcept;
   ~owning_device_buffer_type_erased();
@@ -38,7 +39,7 @@ struct owning_buffer<device_type::gpu, T> {
   owning_buffer()  = default;
   owning_buffer(device_id<device_type::gpu> device_id,
                 std::size_t size,
-                cudaStream_t stream) noexcept(false)
+                cuda::stream_ref stream) noexcept(false)
     : data_{device_id, size * sizeof(value_type), stream}
   {
   }

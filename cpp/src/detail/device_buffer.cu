@@ -16,11 +16,11 @@
 namespace nvforest::detail {
 
 struct owning_device_buffer_type_erased_impl {
-  owning_device_buffer_type_erased_impl(int device_id, std::size_t size, cudaStream_t stream)
+  owning_device_buffer_type_erased_impl(int device_id, std::size_t size, cuda::stream_ref stream)
     : buffer_{[&stream, device_id, size]() {
         auto device = cuda::device_ref{device_id};
         auto mr     = cuda::device_default_memory_pool(device);
-        return cuda::make_buffer<std::byte>(cuda::stream_ref{stream}, mr, size, cuda::no_init);
+        return cuda::make_buffer<std::byte>(stream, mr, size, cuda::no_init);
       }()}
   {
   }
@@ -33,7 +33,7 @@ struct owning_device_buffer_type_erased_impl {
 owning_device_buffer_type_erased::owning_device_buffer_type_erased() : impl_{nullptr} {}
 
 owning_device_buffer_type_erased::owning_device_buffer_type_erased(
-  device_id<device_type::gpu> device_id, std::size_t size, cudaStream_t stream)
+  device_id<device_type::gpu> device_id, std::size_t size, cuda::stream_ref stream)
 {
   auto device_context = device_setter{device_id};
   impl_ = std::make_unique<owning_device_buffer_type_erased_impl>(device_id.value(), size, stream);
