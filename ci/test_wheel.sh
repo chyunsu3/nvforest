@@ -1,5 +1,5 @@
 #!/bin/bash
-# SPDX-FileCopyrightText: Copyright (c) 2025-2026, NVIDIA CORPORATION.
+# SPDX-FileCopyrightText: Copyright (c) 2025-2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
 set -euo pipefail
@@ -14,6 +14,17 @@ mkdir -p "${RAPIDS_TESTS_DIR}"
 # generate constraints, the constraints will limit the version of the
 # dependencies that can be installed later on when installing the wheel
 rapids-generate-pip-constraints test_python "${PIP_CONSTRAINT}"
+
+python -m venv libnvforest-env
+. libnvforest-env/bin/activate
+
+rapids-pip-retry install \
+    -v \
+    --prefer-binary \
+    --constraint "${PIP_CONSTRAINT}" \
+    "${LIBNVFOREST_WHEELHOUSE}"/libnvforest*.whl
+python -c "import libnvforest; assert libnvforest.load_library() is not None"
+deactivate
 
 # Install just minimal dependencies first
 rapids-pip-retry install \
