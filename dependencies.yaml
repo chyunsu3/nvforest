@@ -26,7 +26,6 @@ files:
       - py_version
       - rapids_build_backend
       - test_python
-      - test_python_xgboost
   devcontainers:
     output: none
     includes:
@@ -100,7 +99,6 @@ files:
       - depends_on_libnvforest
       - py_version
       - test_python
-      - test_python_xgboost
   py_build_nvforest:
     output: pyproject
     pyproject_dir: python/nvforest
@@ -111,6 +109,9 @@ files:
   py_rapids_build_nvforest:
     output: pyproject
     pyproject_dir: python/nvforest
+    matrix:
+      use_cuda_wheels: ["true"]
+      cuda_suffixed: ["false"]
     extras:
       table: tool.rapids-build-backend
       key: requires
@@ -125,6 +126,9 @@ files:
   py_run_nvforest:
     output: pyproject
     pyproject_dir: python/nvforest
+    matrix:
+      use_cuda_wheels: ["true"]
+      cuda_suffixed: ["false"]
     extras:
       table: project
     includes:
@@ -137,12 +141,14 @@ files:
   py_test_nvforest:
     output: pyproject
     pyproject_dir: python/nvforest
+    matrix:
+      use_cuda_wheels: ["true"]
+      cuda_suffixed: ["false"]
     extras:
       table: project.optional-dependencies
       key: test
     includes:
       - test_python
-      - test_python_xgboost
   py_build_libnvforest:
     output: pyproject
     pyproject_dir: python/libnvforest
@@ -153,6 +159,9 @@ files:
   py_rapids_build_libnvforest:
     output: pyproject
     pyproject_dir: python/libnvforest
+    matrix:
+      use_cuda_wheels: ["true"]
+      cuda_suffixed: ["false"]
     extras:
       table: tool.rapids-build-backend
       key: requires
@@ -164,6 +173,9 @@ files:
   py_run_libnvforest:
     output: pyproject
     pyproject_dir: python/libnvforest
+    matrix:
+      use_cuda_wheels: ["true"]
+      cuda_suffixed: ["false"]
     extras:
       table: project
     includes:
@@ -172,6 +184,7 @@ files:
       - depends_on_rapids_logger
 channels:
   - rapidsai-nightly
+  - rapidsai
   - conda-forge
 dependencies:
   rapids_build_backend:
@@ -359,7 +372,7 @@ dependencies:
           - sphinx-markdown-tables
       - output_types: conda
         packages:
-          - doxygen
+          - doxygen=1.18.0
   py_version:
     specific:
       - output_types: conda
@@ -427,36 +440,6 @@ dependencies:
           - pytest-cov
           - pytest-xdist
           - *scikit_learn
-  test_python_xgboost:
-    specific:
-      - output_types: [conda]
-        matrices:
-          - matrix:
-              py: "3.11"
-            packages: []
-          - matrix:
-            packages:
-              - xgboost>=3.3.0
-      - output_types: [requirements, pyproject]
-        matrices:
-          - matrix:
-              py: "3.11"
-            packages: []
-          - matrix:
-              cuda: "12.*"
-              cuda_suffixed: "true"
-            packages:
-              - xgboost-cu12>=3.3.0; python_version >= '3.12'
-          - matrix:
-              cuda: "13.*"
-              cuda_suffixed: "true"
-            packages:
-              - xgboost-cu13>=3.3.0; python_version >= '3.12'
-          # this unsuffixed dependency is useful in environments where xgboost is built from source
-          # (like RAPIDS DLFW builds)
-          - matrix:
-            packages:
-              - xgboost>=3.3.0; python_version >= '3.12'
   depends_on_cuda_core:
     common:
       - output_types: [conda, requirements, pyproject]
@@ -512,10 +495,12 @@ dependencies:
               - *cupy_cu13
           - matrix:
               cuda: "12.*"
+              use_cuda_wheels: "true"
             packages:
               - cupy-cuda12x[ctk]>=14.0.1,!=14.1.0
           # fallback to CUDA 13 versions if 'cuda' is '13.*' or not provided
           - matrix:
+              use_cuda_wheels: "true"
             packages:
               - cupy-cuda13x[ctk]>=14.0.1,!=14.1.0
   depends_on_libnvforest:
@@ -540,7 +525,10 @@ dependencies:
               cuda_suffixed: "true"
             packages:
               - libnvforest-cu13==26.12.*,>=0.0.0a0
-          - {matrix: null, packages: [*libnvforest_unsuffixed]}
+          - matrix:
+              cuda_suffixed: "false"
+            packages:
+              - *libnvforest_unsuffixed
   depends_on_libraft:
     common:
       - output_types: conda
@@ -563,7 +551,10 @@ dependencies:
               cuda_suffixed: "true"
             packages:
               - libraft-cu13==26.12.*,>=0.0.0a0
-          - {matrix: null, packages: [*libraft_unsuffixed]}
+          - matrix:
+              cuda_suffixed: "false"
+            packages:
+              - *libraft_unsuffixed
   depends_on_libraft_headers:
     common:
       - output_types: conda
@@ -591,7 +582,10 @@ dependencies:
               cuda_suffixed: "true"
             packages:
               - librmm-cu13==26.12.*,>=0.0.0a0
-          - {matrix: null, packages: [*librmm_unsuffixed]}
+          - matrix:
+              cuda_suffixed: "false"
+            packages:
+              - *librmm_unsuffixed
   depends_on_pylibraft:
     common:
       - output_types: conda
@@ -615,6 +609,7 @@ dependencies:
             packages:
               - pylibraft-cu13==26.12.*,>=0.0.0a0
           - matrix:
+              cuda_suffixed: "false"
             packages:
               - *pylibraft_unsuffixed
   depends_on_rapids_logger:
