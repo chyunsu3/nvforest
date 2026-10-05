@@ -46,10 +46,9 @@ inline auto compute_output_size(index_type row_output_size,
 // If a non-default stream is provided, it must reside on the correct device.
 inline void validate_stream(device_id<device_type::gpu> device, cuda::stream_ref stream)
 {
-  cuda::stream_ref legacy_default_stream{cudaStreamLegacy};
-  cuda::stream_ref per_thread_default_stream{cudaStreamPerThread};
-  if (stream != legacy_default_stream && stream != per_thread_default_stream &&
-      stream.device().get() != device.value()) {
+  if (stream != cuda::stream_ref{cudaStream_t{cudaStreamDefault}} &&
+      stream != cuda::stream_ref{cudaStreamLegacy} &&
+      stream != cuda::stream_ref{cudaStreamPerThread} && stream.device().get() != device.value()) {
     throw std::runtime_error{std::string("Stream on the wrong device. ") +
                              "Expected: " + std::to_string(device.value()) +
                              ", Actual: " + std::to_string(stream.device().get())};
