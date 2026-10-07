@@ -64,7 +64,7 @@ jobs:
     with:
       build_type: ${{ inputs.build_type || 'branch' }}
       build-datetime: ${{ needs.build-details.outputs.build-datetime }}
-      node_type: cpu16
+      node_type: cpu8
       branch: ${{ inputs.branch }}
       date: ${{ inputs.date }}
       script: ci/build_cpp.sh
@@ -172,7 +172,7 @@ jobs:
       branch: ${{ inputs.branch }}
       sha: ${{ inputs.sha }}
       date: ${{ inputs.date }}
-      node_type: cpu16
+      node_type: cpu8
       script: ci/build_wheel_libnvforest.sh
       # build for every combination of arch and CUDA version, but only for the latest Python
       matrix_filter: group_by([.ARCH, (.CUDA_VER|split(".")|map(tonumber)|.[0])]) | map(max_by(.PY_VER|split(".")|map(tonumber)))
