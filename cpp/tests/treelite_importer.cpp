@@ -502,12 +502,6 @@ TEST(TreeliteImporter, SinglePrecisionDoubleThresholds)
 {
   auto constexpr eps = double{std::numeric_limits<float>::epsilon()};
   auto constexpr inf = std::numeric_limits<float>::infinity();
-#ifdef NVFOREST_ENABLE_GPU
-  auto raft_handle = raft::handle_t{};
-  auto handle      = nvforest::handle_t{raft_handle};
-#else
-  auto handle = nvforest::handle_t{};
-#endif
   for (auto threshold : {1.0 + 1.5 * eps, 1.0 + 0.25 * eps, -1e300, 1e300}) {
     auto tl_model = make_double_threshold_forest(threshold);
     auto nearest  = static_cast<float>(threshold);
@@ -532,7 +526,7 @@ TEST(TreeliteImporter, SinglePrecisionDoubleThresholds)
       auto nvforest_model = import_from_treelite_model(*tl_model, layout, index_type{}, false);
       ASSERT_FALSE(nvforest_model.is_double_precision());
       auto preds = std::vector<float>(X.size(), 0.0f);
-      nvforest_model.predict(handle,
+      nvforest_model.predict(nvforest::cuda_stream{},
                              preds.data(),
                              X.data(),
                              X.size(),
