@@ -378,10 +378,6 @@ dependencies:
       - output_types: conda
         matrices:
           - matrix:
-              py: "3.11"
-            packages:
-              - python=3.11
-          - matrix:
               py: "3.12"
             packages:
               - python=3.12
@@ -395,7 +391,7 @@ dependencies:
               - python=3.14
           - matrix:
             packages:
-              - python>=3.11
+              - python>=3.12
   test_libnvforest:
     common:
       - output_types: conda
@@ -508,10 +504,6 @@ dependencies:
       - output_types: conda
         packages:
           - &libnvforest_unsuffixed libnvforest==26.12.*,>=0.0.0a0
-      - output_types: requirements
-        packages:
-          # pip recognizes the index as a global option for the requirements.txt file
-          - --extra-index-url=https://pypi.anaconda.org/rapidsai-wheels-nightly/simple
     specific:
       - output_types: [requirements, pyproject]
         matrices:
@@ -534,10 +526,6 @@ dependencies:
       - output_types: conda
         packages:
           - &libraft_unsuffixed libraft==26.12.*,>=0.0.0a0
-      - output_types: requirements
-        packages:
-          # pip recognizes the index as a global option for the requirements.txt file
-          - --extra-index-url=https://pypi.anaconda.org/rapidsai-wheels-nightly/simple
     specific:
       - output_types: [requirements, pyproject]
         matrices:
@@ -565,10 +553,6 @@ dependencies:
       - output_types: conda
         packages:
           - &librmm_unsuffixed librmm==26.12.*,>=0.0.0a0
-      - output_types: requirements
-        packages:
-          # pip recognizes the index as a global option for the requirements.txt file
-          - --extra-index-url=https://pypi.anaconda.org/rapidsai-wheels-nightly/simple
     specific:
       - output_types: [requirements, pyproject]
         matrices:
@@ -591,10 +575,6 @@ dependencies:
       - output_types: conda
         packages:
           - &pylibraft_unsuffixed pylibraft==26.12.*,>=0.0.0a0
-      - output_types: requirements
-        packages:
-          # pip recognizes the index as a global option for the requirements.txt file
-          - --extra-index-url=https://pypi.anaconda.org/rapidsai-wheels-nightly/simple
     specific:
       - output_types: [requirements, pyproject]
         matrices:
@@ -617,7 +597,3 @@ dependencies:
       - output_types: [conda, requirements, pyproject]
         packages:
           - rapids-logger==0.3.*
-      - output_types: requirements
-        packages:
-          # pip recognizes the index as a global option for the requirements.txt file
-          - --extra-index-url=https://pypi.anaconda.org/rapidsai-wheels-nightly/simple
