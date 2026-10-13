@@ -18,6 +18,7 @@
 #endif
 
 #include <cstddef>
+#include <functional>
 #include <type_traits>
 #include <utility>
 #include <variant>
@@ -185,6 +186,113 @@ struct forest_model {
   }
 
   /**
+   * Perform inference on given input, using multiple CUDA streams.
+   * A stream pool lets you overlap memory transfers with partitioned inference.
+   *
+   * @param[in] stream_pool_next A function that returns a CUDA stream
+   * each time it's called.
+   * @param[in] stream_pool_size A function that returns the number of
+   * CUDA streams in the pool.
+   * @param[out] output The buffer where model output should be stored. If
+   * this buffer is on host while the model is on device or vice versa,
+   * work will be distributed across available streams to copy the data back
+   * to this output location. This must be of size at least ROWS x num_outputs().
+   * @param[in] input The buffer containing input data. If
+   * this buffer is on host while the model is on device or vice versa,
+   * work will be distributed across available streams to copy the input data
+   * to the appropriate location and perform inference.
+   * @param[in] predict_type Type of inference to perform. Defaults to summing
+   * the outputs of all trees and produce an output per row. If set to
+   * "per_tree", we will instead output all outputs of individual trees.
+   * If set to "leaf_id", we will output the integer ID of the leaf node
+   * for each tree.
+   * @param[in] specified_chunk_size: Specifies the mini-batch size for
+   * processing. This has different meanings on CPU and GPU, but on GPU it
+   * corresponds to the number of rows evaluated per inference iteration
+   * on a single block. It can take on any power of 2 from 1 to 32, and
+   * runtime performance is quite sensitive to the value chosen. In general,
+   * larger batches benefit from higher values, but it is hard to predict the
+   * optimal value a priori. If omitted, a heuristic will be used to select a
+   * reasonable value. On CPU, this argument can generally just be omitted.
+   */
+  template <typename io_t>
+  void predict(std::function<cuda_stream()> const& stream_pool_next,
+               std::function<std::size_t()> const& stream_pool_size,
+               buffer<io_t>& output,
+               buffer<io_t> const& input,
+               infer_kind predict_type                        = infer_kind::default_kind,
+               std::optional<index_type> specified_chunk_size = std::nullopt)
+  {
+    std::visit(
+      [this,
+       predict_type,
+       &stream_pool_next,
+       &stream_pool_size,
+       &output,
+       &input,
+       &specified_chunk_size](auto&& concrete_forest) {
+        using model_io_t = std::remove_reference_t<decltype(concrete_forest)>::io_type;
+        if constexpr (std::is_same_v<model_io_t, io_t>) {
+          if (output.memory_type() == memory_type() && input.memory_type() == memory_type()) {
+            concrete_forest.predict(
+              output, input, stream_pool_next(), predict_type, specified_chunk_size);
+          } else {
+            auto constexpr static const MIN_CHUNKS_PER_PARTITION = std::size_t{64};
+            auto constexpr static const MAX_CHUNK_SIZE           = std::size_t{64};
+
+            auto row_count = input.size() / num_features();
+            auto partition_size =
+              std::max(detail::ceildiv(row_count, stream_pool_size()),
+                       specified_chunk_size.value_or(MAX_CHUNK_SIZE) * MIN_CHUNKS_PER_PARTITION);
+            auto partition_count = detail::ceildiv(row_count, partition_size);
+            for (auto i = std::size_t{}; i < partition_count; ++i) {
+              auto stream = stream_pool_next();
+              auto rows_in_this_partition =
+                std::min(partition_size, row_count - i * partition_size);
+              auto partition_in = buffer<io_t>{};
+              if (input.memory_type() != memory_type()) {
+                partition_in = buffer<io_t>{rows_in_this_partition * num_features(), memory_type()};
+                copy<detail::DEBUG_ENABLED>(partition_in,
+                                            input,
+                                            0,
+                                            i * partition_size * num_features(),
+                                            partition_in.size(),
+                                            stream);
+              } else {
+                partition_in = buffer<io_t>{input.data() + i * partition_size * num_features(),
+                                            rows_in_this_partition * num_features(),
+                                            memory_type()};
+              }
+              auto partition_out = buffer<io_t>{};
+              if (output.memory_type() != memory_type()) {
+                partition_out =
+                  buffer<io_t>{rows_in_this_partition * num_outputs(predict_type), memory_type()};
+              } else {
+                partition_out =
+                  buffer<io_t>{output.data() + i * partition_size * num_outputs(predict_type),
+                               rows_in_this_partition * num_outputs(predict_type),
+                               memory_type()};
+              }
+              concrete_forest.predict(
+                partition_out, partition_in, stream, predict_type, specified_chunk_size);
+              if (output.memory_type() != memory_type()) {
+                copy<detail::DEBUG_ENABLED>(output,
+                                            partition_out,
+                                            i * partition_size * num_outputs(predict_type),
+                                            0,
+                                            partition_out.size(),
+                                            stream);
+              }
+            }
+          }
+        } else {
+          throw type_error("Input type does not match model_type");
+        }
+      },
+      decision_forest_);
+  }
+
+  /**
    * Perform inference on given input
    *
    * @param[in] stream A nvforest::cuda_stream, which (on GPU-enabled builds) is
@@ -236,6 +344,66 @@ struct forest_model {
       buffer{output, num_rows * num_outputs(predict_type), out_mem_type, current_device_id};
     auto in_buffer = buffer{input, num_rows * num_features(), in_mem_type, current_device_id};
     predict(stream, out_buffer, in_buffer, predict_type, specified_chunk_size);
+  }
+
+  /**
+   * Perform inference on given input, using multiple CUDA streams.
+   * A stream pool lets you overlap memory transfers with partitioned inference.
+   *
+   * @param[in] stream_pool_next A function that returns a CUDA stream
+   * each time it's called.
+   * @param[in] stream_pool_size A function that returns the number of
+   * CUDA streams in the pool.
+   * @param[out] output Pointer to the memory location where output should end
+   * up
+   * @param[in] input Pointer to the input data
+   * @param[in] num_rows Number of rows in input
+   * @param[in] out_mem_type The memory type (device/host) of the output
+   * buffer
+   * @param[in] in_mem_type The memory type (device/host) of the input buffer
+   * @param[in] predict_type Type of inference to perform. Defaults to summing
+   * the outputs of all trees and produce an output per row. If set to
+   * "per_tree", we will instead output all outputs of individual trees.
+   * If set to "leaf_id", we will output the integer ID of the leaf node
+   * for each tree.
+   * @param[in] specified_chunk_size: Specifies the mini-batch size for
+   * processing. This has different meanings on CPU and GPU, but on GPU it
+   * corresponds to the number of rows evaluated per inference iteration
+   * on a single block. It can take on any power of 2 from 1 to 32, and
+   * runtime performance is quite sensitive to the value chosen. In general,
+   * larger batches benefit from higher values, but it is hard to predict the
+   * optimal value a priori. If omitted, a heuristic will be used to select a
+   * reasonable value. On CPU, this argument can generally just be omitted.
+   */
+  template <typename io_t>
+  void predict(std::function<cuda_stream()> const& stream_pool_next,
+               std::function<std::size_t()> const& stream_pool_size,
+               io_t* output,
+               io_t* input,
+               std::size_t num_rows,
+               device_type out_mem_type,
+               device_type in_mem_type,
+               infer_kind predict_type                        = infer_kind::default_kind,
+               std::optional<index_type> specified_chunk_size = std::nullopt)
+  {
+    int current_device_id;
+    if (out_mem_type == device_type::gpu || in_mem_type == device_type::gpu) {
+#ifdef NVFOREST_ENABLE_GPU
+      detail::cuda_check(cudaGetDevice(&current_device_id));
+#else
+      throw detail::gpu_unsupported("Tried to use GPU memory in CPU-only build");
+#endif
+    } else {
+      current_device_id = -1;
+    }
+    auto out_buffer = buffer{output, num_rows * num_outputs(), out_mem_type, current_device_id};
+    auto in_buffer  = buffer{input, num_rows * num_features(), in_mem_type, current_device_id};
+    predict(stream_pool_next,
+            stream_pool_size,
+            out_buffer,
+            in_buffer,
+            predict_type,
+            specified_chunk_size);
   }
 
  private:
