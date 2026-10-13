@@ -5,6 +5,8 @@
 Compatibility test to ensure that legacy APIs are working
 """
 
+import cupy as cp
+import numpy as np
 import pytest
 import treelite
 from cuda.core import Device
@@ -59,10 +61,21 @@ def test_deprecated_handle():
     stream = device.create_stream()
     handle = nvforest.Handle(stream=stream)
 
+    rng = np.random.default_rng(42)
+    X = rng.standard_normal(size=(1000, 1), dtype="float64")
+
     with pytest.warns(
         FutureWarning,
         match=".*`handle` parameter is deprecated and will be removed in 27.02.*",
     ):
-        _ = nvforest.load_from_treelite_model(
+        fm = nvforest.load_from_treelite_model(
             treelite_model, device="gpu", handle=handle
         )
+        pred_with_handle = cp.asnumpy(fm.predict(X))
+
+    stream2 = cp.cuda.Stream(non_blocking=True)
+    fm2 = nvforest.load_from_treelite_model(
+        treelite_model, device="gpu", stream=stream2
+    )
+    pred_with_stream = cp.asnumpy(fm2.predict(X))
+    np.testing.assert_almost_equal(pred_with_handle, pred_with_stream)
