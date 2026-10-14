@@ -203,7 +203,7 @@ TEST(Inference, GPUModelWithRAFTHandle)
                         std::make_shared<rmm::cuda_stream_pool>(n_streams)};
   for (auto const& [infer_type, expected] : cases) {
     SCOPED_TRACE(static_cast<int>(infer_type));
-    auto output = std::vector<float>(expected.size());
+    auto output = thrust::device_vector<float>(expected.size());
     nvforest_model.predict([&] { return cuda_stream{handle.get_next_usable_stream().get()}; },
                            [&] { return handle.get_stream_pool_size(); },
                            thrust::raw_pointer_cast(output.data()),
