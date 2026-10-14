@@ -189,10 +189,9 @@ struct forest_model {
    * Perform inference on given input, using multiple CUDA streams.
    * A stream pool lets you overlap memory transfers with partitioned inference.
    *
-   * @param[in] stream_pool_next A function that returns a CUDA stream
-   * each time it's called.
-   * @param[in] stream_pool_size A function that returns the number of
-   * CUDA streams in the pool.
+   * @param[in] stream_pool_next A callback function that returns a CUDA stream
+   * from the pool.
+   * @param[in] stream_pool_size The number of CUDA streams in the pool.
    * @param[out] output The buffer where model output should be stored. If
    * this buffer is on host while the model is on device or vice versa,
    * work will be distributed across available streams to copy the data back
@@ -217,7 +216,7 @@ struct forest_model {
    */
   template <typename io_t>
   void predict(std::function<cuda_stream()> const& stream_pool_next,
-               std::function<std::size_t()> const& stream_pool_size,
+               std::size_t stream_pool_size,
                buffer<io_t>& output,
                buffer<io_t> const& input,
                infer_kind predict_type                        = infer_kind::default_kind,
@@ -227,7 +226,7 @@ struct forest_model {
       [this,
        predict_type,
        &stream_pool_next,
-       &stream_pool_size,
+       stream_pool_size,
        &output,
        &input,
        &specified_chunk_size](auto&& concrete_forest) {
@@ -242,7 +241,7 @@ struct forest_model {
 
             auto row_count = input.size() / num_features();
             auto partition_size =
-              std::max(detail::ceildiv(row_count, stream_pool_size()),
+              std::max(detail::ceildiv(row_count, stream_pool_size),
                        specified_chunk_size.value_or(MAX_CHUNK_SIZE) * MIN_CHUNKS_PER_PARTITION);
             auto partition_count = detail::ceildiv(row_count, partition_size);
             for (auto i = std::size_t{}; i < partition_count; ++i) {
@@ -350,10 +349,9 @@ struct forest_model {
    * Perform inference on given input, using multiple CUDA streams.
    * A stream pool lets you overlap memory transfers with partitioned inference.
    *
-   * @param[in] stream_pool_next A function that returns a CUDA stream
-   * each time it's called.
-   * @param[in] stream_pool_size A function that returns the number of
-   * CUDA streams in the pool.
+   * @param[in] stream_pool_next A callback function that returns a CUDA stream
+   * from the pool.
+   * @param[in] stream_pool_size The number of CUDA streams in the pool.
    * @param[out] output Pointer to the memory location where output should end
    * up
    * @param[in] input Pointer to the input data
@@ -377,7 +375,7 @@ struct forest_model {
    */
   template <typename io_t>
   void predict(std::function<cuda_stream()> const& stream_pool_next,
-               std::function<std::size_t()> const& stream_pool_size,
+               std::size_t const& stream_pool_size,
                io_t* output,
                io_t* input,
                std::size_t num_rows,

@@ -158,12 +158,11 @@ TYPED_TEST(GPUModelInferenceTest, Predict)
     auto stream_pool_next = [&]() {
       return nvforest::cuda_stream{stream_pool[current_stream_id++].get()};
     };
-    auto stream_pool_size = [&]() { return stream_pool.size(); };
     for (auto const& [infer_type, expected] : cases) {
       SCOPED_TRACE(static_cast<int>(infer_type));
       auto output = TypeParam(expected.size());
       nvforest_model.predict(stream_pool_next,
-                             stream_pool_size,
+                             n_streams,
                              thrust::raw_pointer_cast(output.data()),
                              thrust::raw_pointer_cast(input.data()),
                              input.size(),
@@ -205,7 +204,7 @@ TEST(Inference, GPUModelWithRAFTHandle)
     SCOPED_TRACE(static_cast<int>(infer_type));
     auto output = thrust::device_vector<float>(expected.size());
     nvforest_model.predict([&] { return cuda_stream{handle.get_next_usable_stream().get()}; },
-                           [&] { return handle.get_stream_pool_size(); },
+                           handle.get_stream_pool_size(),
                            thrust::raw_pointer_cast(output.data()),
                            thrust::raw_pointer_cast(input.data()),
                            input.size(),
