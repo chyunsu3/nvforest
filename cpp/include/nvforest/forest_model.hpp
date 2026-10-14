@@ -191,7 +191,8 @@ struct forest_model {
    *
    * @param[in] stream_pool_next A callback function that returns a CUDA stream
    * from the pool.
-   * @param[in] stream_pool_size The number of CUDA streams in the pool.
+   * @param[in] stream_pool_size The number of CUDA streams in the pool. This
+   * must be greater than zero.
    * @param[out] output The buffer where model output should be stored. If
    * this buffer is on host while the model is on device or vice versa,
    * work will be distributed across available streams to copy the data back
@@ -351,7 +352,8 @@ struct forest_model {
    *
    * @param[in] stream_pool_next A callback function that returns a CUDA stream
    * from the pool.
-   * @param[in] stream_pool_size The number of CUDA streams in the pool.
+   * @param[in] stream_pool_size The number of CUDA streams in the pool. This
+   * must be greater than zero.
    * @param[out] output Pointer to the memory location where output should end
    * up
    * @param[in] input Pointer to the input data
