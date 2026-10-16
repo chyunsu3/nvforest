@@ -9,6 +9,7 @@
 #include <nvforest/treelite_importer.hpp>
 
 #include <cuda/devices>
+#include <cuda/stream>
 #include <thrust/device_vector.h>
 
 #include <gmock/gmock.h>
@@ -53,21 +54,25 @@ TEST(InvalidStream, wrong_device)
   model_builder->EndNode();
   model_builder->EndTree();
 
-  cuda_stream stream;
-  {
-    auto device_context = detail::device_setter{detail::device_id<device_type::gpu>{1}};
-    detail::cuda_check(cudaStreamCreate(&stream));
-  }
+  auto device_context = detail::device_setter{detail::device_id<device_type::gpu>{0}};
+  cuda::stream import_stream{cuda::device_ref{0}};
+  cuda::stream wrong_device_stream{cuda::device_ref{1}};
 
-  // Loading a model on device 0 and inferencing on device 1 is an error.
+  // Import on a valid stream before testing prediction with a wrong-device stream.
   auto tl_model       = model_builder->CommitModel();
-  auto nvforest_model = import_from_treelite_model(
-    *tl_model, tree_layout::breadth_first, index_type{}, false, device_type::gpu, 0, stream);
+  auto nvforest_model = import_from_treelite_model(*tl_model,
+                                                   tree_layout::breadth_first,
+                                                   index_type{},
+                                                   false,
+                                                   device_type::gpu,
+                                                   0,
+                                                   import_stream.get());
+  import_stream.sync();
   auto input  = thrust::device_vector<float>{1.0f};
   auto output = thrust::device_vector<float>(1);
   EXPECT_THAT(
     [&]() {
-      nvforest_model.predict(stream,
+      nvforest_model.predict(wrong_device_stream.get(),
                              thrust::raw_pointer_cast(output.data()),
                              thrust::raw_pointer_cast(input.data()),
                              1,
