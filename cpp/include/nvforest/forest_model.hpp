@@ -19,6 +19,7 @@
 
 #include <cstddef>
 #include <functional>
+#include <stdexcept>
 #include <type_traits>
 #include <utility>
 #include <variant>
@@ -196,7 +197,7 @@ struct forest_model {
    * @param[out] output The buffer where model output should be stored. If
    * this buffer is on host while the model is on device or vice versa,
    * work will be distributed across available streams to copy the data back
-   * to this output location. This must be of size at least ROWS x num_outputs().
+   * to this output location. This must be of size at least ROWS x num_outputs(predict_type).
    * @param[in] input The buffer containing input data. If
    * this buffer is on host while the model is on device or vice versa,
    * work will be distributed across available streams to copy the input data
@@ -223,6 +224,9 @@ struct forest_model {
                infer_kind predict_type                        = infer_kind::default_kind,
                std::optional<index_type> specified_chunk_size = std::nullopt)
   {
+    if (stream_pool_size == 0) {
+      throw std::invalid_argument("stream_pool_size must be greater than zero");
+    }
     std::visit(
       [this,
        predict_type,
@@ -377,7 +381,7 @@ struct forest_model {
    */
   template <typename io_t>
   void predict(std::function<cuda_stream()> const& stream_pool_next,
-               std::size_t const& stream_pool_size,
+               std::size_t stream_pool_size,
                io_t* output,
                io_t* input,
                std::size_t num_rows,
