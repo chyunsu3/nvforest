@@ -163,15 +163,18 @@ struct forest_model {
                 buffer<io_t>{row_count * num_features(), memory_type(), device_index(), stream};
               copy<detail::DEBUG_ENABLED>(buffer_in, input, 0, 0, buffer_in.size(), stream);
             } else {
-              buffer_in = buffer<io_t>{input.data(), row_count * num_features(), memory_type()};
+              buffer_in = buffer<io_t>{
+                input.data(), row_count * num_features(), memory_type(), input.device_index()};
             }
             auto buffer_out = buffer<io_t>{};
             if (output.memory_type() != memory_type()) {
               buffer_out = buffer<io_t>{
                 row_count * num_outputs(predict_type), memory_type(), device_index(), stream};
             } else {
-              buffer_out =
-                buffer<io_t>{output.data(), row_count * num_outputs(predict_type), memory_type()};
+              buffer_out = buffer<io_t>{output.data(),
+                                        row_count * num_outputs(predict_type),
+                                        memory_type(),
+                                        output.device_index()};
             }
             concrete_forest.predict(
               buffer_out, buffer_in, stream, predict_type, specified_chunk_size);
@@ -255,7 +258,8 @@ struct forest_model {
                 std::min(partition_size, row_count - i * partition_size);
               auto partition_in = buffer<io_t>{};
               if (input.memory_type() != memory_type()) {
-                partition_in = buffer<io_t>{rows_in_this_partition * num_features(), memory_type()};
+                partition_in = buffer<io_t>{
+                  rows_in_this_partition * num_features(), memory_type(), device_index(), stream};
                 copy<detail::DEBUG_ENABLED>(partition_in,
                                             input,
                                             0,
@@ -265,17 +269,21 @@ struct forest_model {
               } else {
                 partition_in = buffer<io_t>{input.data() + i * partition_size * num_features(),
                                             rows_in_this_partition * num_features(),
-                                            memory_type()};
+                                            memory_type(),
+                                            input.device_index()};
               }
               auto partition_out = buffer<io_t>{};
               if (output.memory_type() != memory_type()) {
-                partition_out =
-                  buffer<io_t>{rows_in_this_partition * num_outputs(predict_type), memory_type()};
+                partition_out = buffer<io_t>{rows_in_this_partition * num_outputs(predict_type),
+                                             memory_type(),
+                                             device_index(),
+                                             stream};
               } else {
                 partition_out =
                   buffer<io_t>{output.data() + i * partition_size * num_outputs(predict_type),
                                rows_in_this_partition * num_outputs(predict_type),
-                               memory_type()};
+                               memory_type(),
+                               output.device_index()};
               }
               concrete_forest.predict(
                 partition_out, partition_in, stream, predict_type, specified_chunk_size);
@@ -400,8 +408,9 @@ struct forest_model {
     } else {
       current_device_id = -1;
     }
-    auto out_buffer = buffer{output, num_rows * num_outputs(), out_mem_type, current_device_id};
-    auto in_buffer  = buffer{input, num_rows * num_features(), in_mem_type, current_device_id};
+    auto out_buffer =
+      buffer{output, num_rows * num_outputs(predict_type), out_mem_type, current_device_id};
+    auto in_buffer = buffer{input, num_rows * num_features(), in_mem_type, current_device_id};
     predict(stream_pool_next,
             stream_pool_size,
             out_buffer,
