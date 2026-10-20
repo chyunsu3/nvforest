@@ -201,14 +201,14 @@ texinfo_documents = [
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
-    "cuda-python": (
-        "https://nvidia.github.io/cuda-python/cuda-core/latest/",
-        None,
-    ),
     "numpy": ("https://numpy.org/doc/stable/", None),
     "python": ("https://docs.python.org/3", None),
     "sklearn": ("https://scikit-learn.org/stable/", None),
     "treelite": ("https://treelite.readthedocs.io/en/latest/", None),
+    "cuda-python": (
+        "https://nvidia.github.io/cuda-python/cuda-core/",
+        None,
+    ),
 }
 
 # Config numpydoc

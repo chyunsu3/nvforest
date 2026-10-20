@@ -21,6 +21,7 @@ echo "libnvforest-${RAPIDS_PY_CUDA_SUFFIX} @ file://$(echo "${LIBNVFOREST_WHEELH
 
 EXCLUDE_ARGS=(
   --exclude "libnvforest.so"
+  --exclude "libraft.so"
   --exclude "libcublas.so.*"
   --exclude "libcublasLt.so.*"
   --exclude "libcufft.so.*"

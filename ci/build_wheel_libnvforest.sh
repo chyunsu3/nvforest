@@ -29,6 +29,7 @@ rapids-pip-retry install \
 export PIP_NO_BUILD_ISOLATION=0
 
 EXCLUDE_ARGS=(
+  --exclude "libraft.so"
   --exclude "libcublas.so.*"
   --exclude "libcublasLt.so.*"
   --exclude "libcufft.so.*"
