@@ -111,6 +111,7 @@ DEPENDENCIES=(
   libnvforest-tests
   libraft
   libraft-headers
+  librmm
   pylibraft
 )
 for DEP in "${DEPENDENCIES[@]}"; do
