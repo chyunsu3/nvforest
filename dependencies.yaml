@@ -15,6 +15,8 @@ files:
       - depends_on_cuda_python
       - depends_on_cuda_core
       - depends_on_cupy
+      - depends_on_libraft
+      - depends_on_pylibraft
       - depends_on_rapids_logger
       - develop
       - docs
@@ -23,20 +25,17 @@ files:
       - py_version
       - rapids_build_backend
       - test_python
-      - test_python_xgboost
   devcontainers:
     output: none
     includes:
-      # "devcontainers" includes everything in "all", excluding test_python_xgboost
-      # The libxgboost package depends on librmm but we do not want to have a
-      # package depending on librmm in devcontainers since it should be built
-      # from source.
       - common_build
       - cuda
       - cuda_version
       - depends_on_cuda_python
       - depends_on_cuda_core
       - depends_on_cupy
+      - depends_on_libraft
+      - depends_on_pylibraft
       - depends_on_rapids_logger
       - py_build_nvforest
       - py_run_nvforest
@@ -52,6 +51,7 @@ files:
       - common_build
       - cuda
       - cuda_version
+      - depends_on_libraft_headers
   checks:
     output: none
     includes:
@@ -67,6 +67,7 @@ files:
       - common_build
       - cuda
       - cuda_version
+      - depends_on_libraft_headers
   docs:
     output: none
     includes:
@@ -90,7 +91,6 @@ files:
       - depends_on_libnvforest
       - py_version
       - test_python
-      - test_python_xgboost
   py_build_nvforest:
     output: pyproject
     pyproject_dir: python/nvforest
@@ -101,6 +101,9 @@ files:
   py_rapids_build_nvforest:
     output: pyproject
     pyproject_dir: python/nvforest
+    matrix:
+      use_cuda_wheels: ["true"]
+      cuda_suffixed: ["false"]
     extras:
       table: tool.rapids-build-backend
       key: requires
@@ -108,10 +111,15 @@ files:
       - common_build
       - depends_on_cuda_python
       - depends_on_libnvforest
+      - depends_on_libraft
+      - depends_on_pylibraft
       - py_build_nvforest
   py_run_nvforest:
     output: pyproject
     pyproject_dir: python/nvforest
+    matrix:
+      use_cuda_wheels: ["true"]
+      cuda_suffixed: ["false"]
     extras:
       table: project
     includes:
@@ -119,16 +127,19 @@ files:
       - depends_on_cuda_core
       - depends_on_cupy
       - depends_on_libnvforest
+      - depends_on_pylibraft
       - py_run_nvforest
   py_test_nvforest:
     output: pyproject
     pyproject_dir: python/nvforest
+    matrix:
+      use_cuda_wheels: ["true"]
+      cuda_suffixed: ["false"]
     extras:
       table: project.optional-dependencies
       key: test
     includes:
       - test_python
-      - test_python_xgboost
   py_build_libnvforest:
     output: pyproject
     pyproject_dir: python/libnvforest
@@ -139,18 +150,26 @@ files:
   py_rapids_build_libnvforest:
     output: pyproject
     pyproject_dir: python/libnvforest
+    matrix:
+      use_cuda_wheels: ["true"]
+      cuda_suffixed: ["false"]
     extras:
       table: tool.rapids-build-backend
       key: requires
     includes:
       - common_build
+      - depends_on_libraft
       - depends_on_rapids_logger
   py_run_libnvforest:
     output: pyproject
     pyproject_dir: python/libnvforest
+    matrix:
+      use_cuda_wheels: ["true"]
+      cuda_suffixed: ["false"]
     extras:
       table: project
     includes:
+      - depends_on_libraft
       - depends_on_rapids_logger
 channels:
   - rapidsai-nightly
@@ -220,7 +239,7 @@ dependencies:
       - output_types: [conda, requirements, pyproject]
         packages:
           - cython>=3.0.0
-          - &treelite treelite>=4.7.0,<5.0
+          - &treelite treelite>=4.7.2,<5.0
   py_run_nvforest:
     common:
       - output_types: [conda, requirements, pyproject]
@@ -342,15 +361,11 @@ dependencies:
           - sphinx-markdown-tables
       - output_types: conda
         packages:
-          - doxygen
+          - doxygen=1.18.0
   py_version:
     specific:
       - output_types: conda
         matrices:
-          - matrix:
-              py: "3.11"
-            packages:
-              - python=3.11
           - matrix:
               py: "3.12"
             packages:
@@ -365,12 +380,12 @@ dependencies:
               - python=3.14
           - matrix:
             packages:
-              - python>=3.11
+              - python>=3.12
   test_libnvforest:
     common:
       - output_types: conda
         packages:
-          - libnvforest-tests==26.10.*,>=0.0.0a0
+          - libnvforest-tests==26.12.*,>=0.0.0a0
   test_cpp:
     common:
       - output_types: conda
@@ -392,12 +407,12 @@ dependencies:
               dependencies: "oldest"
               cuda: "12.*"
             packages:
-              - cuda-bindings==12.9.2
+              - cuda-bindings==12.9.3
           - matrix:
               dependencies: "oldest"
               cuda: "13.*"
             packages:
-              - cuda-bindings==13.0.1
+              - cuda-bindings==13.0.2
           - matrix:
             packages:
     common:
@@ -410,36 +425,6 @@ dependencies:
           - pytest-cov
           - pytest-xdist
           - *scikit_learn
-  test_python_xgboost:
-    specific:
-      - output_types: [conda]
-        matrices:
-          - matrix:
-              py: "3.11"
-            packages: []
-          - matrix:
-            packages:
-              - xgboost>=3.3.0
-      - output_types: [requirements, pyproject]
-        matrices:
-          - matrix:
-              py: "3.11"
-            packages: []
-          - matrix:
-              cuda: "12.*"
-              cuda_suffixed: "true"
-            packages:
-              - xgboost-cu12>=3.3.0; python_version >= '3.12'
-          - matrix:
-              cuda: "13.*"
-              cuda_suffixed: "true"
-            packages:
-              - xgboost-cu13>=3.3.0; python_version >= '3.12'
-          # this unsuffixed dependency is useful in environments where xgboost is built from source
-          # (like RAPIDS DLFW builds)
-          - matrix:
-            packages:
-              - xgboost>=3.3.0; python_version >= '3.12'
   depends_on_cuda_core:
     common:
       - output_types: [conda, requirements, pyproject]
@@ -452,16 +437,16 @@ dependencies:
           - matrix:
               cuda: "12.*"
             packages:
-              - cuda-bindings>=12.9.2,<13.0
+              - cuda-bindings>=12.9.3,<13.0
           # fallback to CUDA 13 versions if 'cuda' is '13.*' or not provided
           - matrix:
             packages:
-              - cuda-bindings>=13.0.1,<14.0
+              - cuda-bindings>=13.0.2,<14.0
   depends_on_nvforest:
     common:
       - output_types: conda
         packages:
-          - nvforest==26.10.*,>=0.0.0a0
+          - nvforest==26.12.*,>=0.0.0a0
   depends_on_cupy:
     common:
       - output_types: conda
@@ -495,21 +480,19 @@ dependencies:
               - *cupy_cu13
           - matrix:
               cuda: "12.*"
+              use_cuda_wheels: "true"
             packages:
               - cupy-cuda12x[ctk]>=14.0.1,!=14.1.0
           # fallback to CUDA 13 versions if 'cuda' is '13.*' or not provided
           - matrix:
+              use_cuda_wheels: "true"
             packages:
               - cupy-cuda13x[ctk]>=14.0.1,!=14.1.0
   depends_on_libnvforest:
     common:
       - output_types: conda
         packages:
-          - &libnvforest_unsuffixed libnvforest==26.10.*,>=0.0.0a0
-      - output_types: requirements
-        packages:
-          # pip recognizes the index as a global option for the requirements.txt file
-          - --extra-index-url=https://pypi.anaconda.org/rapidsai-wheels-nightly/simple
+          - &libnvforest_unsuffixed libnvforest==26.12.*,>=0.0.0a0
     specific:
       - output_types: [requirements, pyproject]
         matrices:
@@ -517,19 +500,67 @@ dependencies:
               cuda: "12.*"
               cuda_suffixed: "true"
             packages:
-              - libnvforest-cu12==26.10.*,>=0.0.0a0
+              - libnvforest-cu12==26.12.*,>=0.0.0a0
           - matrix:
               cuda: "13.*"
               cuda_suffixed: "true"
             packages:
-              - libnvforest-cu13==26.10.*,>=0.0.0a0
-          - {matrix: null, packages: [*libnvforest_unsuffixed]}
+              - libnvforest-cu13==26.12.*,>=0.0.0a0
+          - matrix:
+              cuda_suffixed: "false"
+            packages:
+              - *libnvforest_unsuffixed
+  depends_on_libraft:
+    common:
+      - output_types: conda
+        packages:
+          - &libraft_unsuffixed libraft==26.12.*,>=0.0.0a0
+    specific:
+      - output_types: [requirements, pyproject]
+        matrices:
+          - matrix:
+              cuda: "12.*"
+              cuda_suffixed: "true"
+            packages:
+              - libraft-cu12==26.12.*,>=0.0.0a0
+          - matrix:
+              cuda: "13.*"
+              cuda_suffixed: "true"
+            packages:
+              - libraft-cu13==26.12.*,>=0.0.0a0
+          - matrix:
+              cuda_suffixed: "false"
+            packages:
+              - *libraft_unsuffixed
+  depends_on_libraft_headers:
+    common:
+      - output_types: conda
+        packages:
+          - libraft-headers==26.12.*,>=0.0.0a0
+  depends_on_pylibraft:
+    common:
+      - output_types: conda
+        packages:
+          - &pylibraft_unsuffixed pylibraft==26.12.*,>=0.0.0a0
+    specific:
+      - output_types: [requirements, pyproject]
+        matrices:
+          - matrix:
+              cuda: "12.*"
+              cuda_suffixed: "true"
+            packages:
+              - pylibraft-cu12==26.12.*,>=0.0.0a0
+          - matrix:
+              cuda: "13.*"
+              cuda_suffixed: "true"
+            packages:
+              - pylibraft-cu13==26.12.*,>=0.0.0a0
+          - matrix:
+              cuda_suffixed: "false"
+            packages:
+              - *pylibraft_unsuffixed
   depends_on_rapids_logger:
     common:
       - output_types: [conda, requirements, pyproject]
         packages:
           - rapids-logger==0.3.*
-      - output_types: requirements
-        packages:
-          # pip recognizes the index as a global option for the requirements.txt file
-          - --extra-index-url=https://pypi.anaconda.org/rapidsai-wheels-nightly/simple

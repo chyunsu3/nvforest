@@ -24,6 +24,7 @@ from nvforest._forest_inference import (
     GPUForestInferenceClassifier,
     GPUForestInferenceRegressor,
 )
+from nvforest._handle import Handle
 from nvforest._typing import StreamLike
 from nvforest._version import __git_commit__, __version__
 
@@ -32,6 +33,7 @@ __all__ = [
     "CPUForestInferenceRegressor",
     "GPUForestInferenceClassifier",
     "GPUForestInferenceRegressor",
+    "Handle",
     "StreamLike",
     "load_model",
     "load_from_sklearn",

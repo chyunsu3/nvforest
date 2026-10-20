@@ -16,8 +16,9 @@ You can install nvForest using Pip or Conda.
    # Using Conda: need to specify the rapidsai channel
    $ conda install -c rapidsai -c conda-forge nvforest
 
-You can also install nvForest as part of RAPIDS, a collection of libraries for GPU accelerated data science.
-Visit https://docs.rapids.ai/install/ for more information.
+Please see the `Installation Guide <https://docs.nvidia.com/datascience/install/#system-requirements>`_
+for NVIDIA CUDA-X libraries for data science for information about supported operating systems,
+GPU drivers, and CUDA versions.
 
 nvForest with Python
 ====================
@@ -252,6 +253,8 @@ Once the tree model is available as a Treelite object, pass it to the
     #include <cuda_runtime_api.h>
     #include <optional>
 
+    constexpr int device_id = 0;
+    cudaSetDevice(device_id);
     cudaStream_t stream{};
     cudaStreamCreate(&stream);
 
@@ -261,7 +264,7 @@ Once the tree model is available as a Treelite object, pass it to the
         nvforest::index_type{},
         std::nullopt,
         nvforest::device_type::gpu,
-        0,
+        device_id,
         stream);
 
 Now that the tree model is fully imported into nvForest, let's run inference:
@@ -272,9 +275,8 @@ Now that the tree model is fully imported into nvForest, let's run inference:
     // * Both output and input are in the GPU memory.
     // * The input buffer should be of dimension (num_rows, num_features)
     // * The output buffer should be of dimension (num_rows, fm.num_outputs())
-    fm.predict(output, input, num_rows,
+    fm.predict(stream, output, input, num_rows,
                nvforest::device_type::gpu, nvforest::device_type::gpu,
-               stream,
                nvforest::infer_kind::default_kind);
 
     // Wait before reading or freeing output.
@@ -283,12 +285,10 @@ Now that the tree model is fully imported into nvForest, let's run inference:
     // Use output
     // ...
 
-    // Clean up
-    fm.reset();
-    cudaStreamDestroy(stream);
-    // ... also free input, output buffers
+    // Clean up by destroying stream
+    // Also free input, output buffers
 
-Use a stream associated with the same device as the model. Reusing the stream for import and
-inference preserves the ordering between model initialization and prediction without an
-additional synchronization. Keep the stream alive until the model is destroyed and all queued
+Use a stream associated with the same device as the model. Re-use the stream for import and
+inference to preserve the ordering between model initialization and prediction without a global
+synchronization. Keep the stream alive until the model is destroyed and all queued
 work has completed.

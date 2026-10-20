@@ -21,7 +21,7 @@ repos:
         files: python/.*
         args: ["--settings-path", "python/nvforest/pyproject.toml"]
   - repo: https://github.com/MarcoGorelli/cython-lint
-    rev: v0.16.6
+    rev: v0.21.1
     hooks:
       - id: cython-lint
   - repo: https://github.com/pre-commit/mirrors-clang-format
@@ -82,8 +82,9 @@ repos:
         pass_filenames: false
         language: python
   - repo: https://github.com/rapidsai/pre-commit-hooks
-    rev: v1.6.0
+    rev: v1.7.0
     hooks:
+      - id: verify-dependencies
       - id: verify-copyright
         name: verify-copyright
         args: [--fix, --spdx]

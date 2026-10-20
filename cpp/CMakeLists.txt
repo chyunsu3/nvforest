@@ -29,6 +29,15 @@ project(
   VERSION "${RAPIDS_VERSION}"
   LANGUAGES CXX)
 
+# Find CMake packages provided by installed wheels.
+find_package(Python COMPONENTS Interpreter)
+if(Python_FOUND)
+  include(${rapids-cmake-dir}/cython-core/find_prefix_paths.cmake)
+  rapids_cython_find_prefix_paths("${Python_EXECUTABLE}" wheel_prefix_paths)
+  set_property(GLOBAL PROPERTY FIND_LIBRARY_USE_LIB64_PATHS TRUE)
+  list(PREPEND CMAKE_PREFIX_PATH ${wheel_prefix_paths})
+endif()
+
 # Write the version header
 rapids_cmake_write_version_file(include/nvforest/version_config.hpp)
 
@@ -198,6 +207,9 @@ endif()
 
 # CCCL before RMM, and RMM before RAFT
 include(cmake/thirdparty/get_cccl.cmake)
+if(NVFOREST_ENABLE_GPU)
+  include(cmake/thirdparty/get_raft.cmake)
+endif()
 include(cmake/thirdparty/get_treelite.cmake)
 
 if(BUILD_NVFOREST_TESTS)
@@ -309,7 +321,7 @@ elseif(NVFOREST_EXPORT_TREELITE_LINKAGE)
 endif()
 
 if(NVFOREST_ENABLE_GPU)
-  list(APPEND _nvforest_cpp_public_libs CUDA::cudart_static CCCL::CCCL)
+  list(APPEND _nvforest_cpp_public_libs raft::raft CUDA::cudart_static CCCL::CCCL)
 endif()
 
 # These are always private:

@@ -1,9 +1,5 @@
-# nvForest Inference Library
-RAPIDS nvForest Inference Library provides accelerated inference for
-tree-based machine learning models. Unlike packages like XGBoost,
-LightGBM, or even Scikit-Learn/cuML's random forest implementations, nvForest
-cannot be used to _train_ forest models. Instead, its goal is to speed up
-inference using forest models trained by all of those packages.
+# NVIDIA nvForest Inference Library
+nvForest is a highly-optimized and lightweight library that enables fast inference for decision tree models on NVIDIA GPUs and CPUs. It does not train models; it runs inference on models trained elsewhere (e.g., XGBoost, LightGBM, scikit-learn, or cuML).
 
 This directory contains an implementation of nvForest which
 provides both CPU and GPU execution. Its GPU implementation also offers
@@ -98,18 +94,24 @@ auto output = static_cast<float*>(nullptr);  // Loaded as single
 cudaMalloc((void**)&output, num_rows * num_outputs * sizeof(float));
 
 // Assuming that input is a float* pointing to data already located on-device
-
 nvforest_model.predict(
+  stream,
   output,
   input,
   num_rows,
   nvforest::device_type::gpu,  // out_mem_type
   nvforest::device_type::gpu,  // in_mem_type
-  stream,
   nvforest::infer_kind::default_kind,
   4  // chunk_size
 );
 ```
+
+**stream**: The CUDA stream on which inference and any required data copies
+will run. It must be associated with the same GPU device as the model. Reusing
+the stream passed during model import preserves the ordering between model
+initialization and inference. Synchronize the stream before consuming the
+output on the host or releasing resources used by the operation. Keep the stream
+alive until the model is destroyed and all queued work has completed.
 
 **output**: Pointer to pre-allocated buffer where results should be
 written. If the model has been loaded at single precision, this should be a
@@ -125,13 +127,6 @@ loaded at double precision, this should be a `double*`.
 **out_mem_type**: Indicates whether output buffer is on device or host.
 
 **in_mem_type**: Indicates whether input buffer is on device or host.
-
-**stream**: The CUDA stream on which inference and any required data copies
-will run. It must be associated with the same GPU device as the model. Reusing
-the stream passed during model import preserves the ordering between model
-initialization and inference. Synchronize the stream before consuming the
-output on the host or releasing resources used by the operation. Keep the stream
-alive until the model is destroyed and all queued work has completed.
 
 **chunk_size**: This value has a somewhat different meaning for CPU and GPU,
 but it generally indicates the number of rows which are evaluated in a single

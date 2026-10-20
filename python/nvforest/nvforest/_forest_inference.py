@@ -8,6 +8,9 @@ from enum import Enum
 from time import perf_counter
 from typing import Optional
 
+from nvforest._handle import Handle
+from nvforest.detail.raft_stream import _handle_deprecated_handle_arg
+
 try:
     from typing import Self
 except ImportError:
@@ -264,9 +267,11 @@ class CPUForestInferenceClassifier(
         default_chunk_size: Optional[int] = None,
         align_bytes: Optional[int] = None,
         precision: Optional[str] = None,
+        handle: Optional[Handle] = None,
     ):
         if not infer_is_classifier(treelite_model):
             raise ValueError("treelite_model must be a classifier.")
+        stream = _handle_deprecated_handle_arg(handle=handle, stream=stream)
         self.forest = ForestInferenceImpl(
             treelite_model=treelite_model,
             device="cpu",
@@ -401,9 +406,11 @@ class CPUForestInferenceRegressor(OptimizeMixin, ForestInferenceRegressor):
         default_chunk_size: Optional[int] = None,
         align_bytes: Optional[int] = None,
         precision: Optional[str] = None,
+        handle: Optional[Handle] = None,
     ):
         if infer_is_classifier(treelite_model):
             raise ValueError("treelite_model must be a regressor.")
+        stream = _handle_deprecated_handle_arg(handle=handle, stream=stream)
         self.forest = ForestInferenceImpl(
             treelite_model=treelite_model,
             device="cpu",
@@ -530,10 +537,12 @@ class GPUForestInferenceClassifier(
         default_chunk_size: Optional[int] = None,
         align_bytes: Optional[int] = None,
         precision: Optional[str] = None,
+        handle: Optional[Handle] = None,
         device_id: int,
     ):
         if not infer_is_classifier(treelite_model):
             raise ValueError("treelite_model must be a classifier.")
+        stream = _handle_deprecated_handle_arg(handle=handle, stream=stream)
         self.forest = ForestInferenceImpl(
             treelite_model=treelite_model,
             device="gpu",
@@ -669,10 +678,12 @@ class GPUForestInferenceRegressor(OptimizeMixin, ForestInferenceRegressor):
         default_chunk_size: Optional[int] = None,
         align_bytes: Optional[int] = None,
         precision: Optional[str] = None,
+        handle: Optional[Handle] = None,
         device_id: int,
     ):
         if infer_is_classifier(treelite_model):
             raise ValueError("treelite_model must be a regressor.")
+        stream = _handle_deprecated_handle_arg(handle=handle, stream=stream)
         self.forest = ForestInferenceImpl(
             treelite_model=treelite_model,
             device="gpu",
