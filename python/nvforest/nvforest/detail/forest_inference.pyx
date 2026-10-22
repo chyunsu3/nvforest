@@ -7,9 +7,11 @@ from typing import Optional, Union
 
 import numpy as np
 import treelite
+from cuda.bindings import runtime
 from cuda.core import Device, Stream
 
 from nvforest._typing import DataType, StreamLike
+from nvforest.detail.device_infer import infer_device
 from nvforest.detail.treelite import safe_treelite_call
 
 from libc.stdint cimport uint32_t, uintptr_t
@@ -273,6 +275,30 @@ cdef class ForestInference_impl():
         return preds
 
 
+def _infer_device_for_deserialization(
+    device: str,
+    device_id: Optional[int],
+) -> tuple[str, int]:
+    """Select an available device when restoring a serialized model."""
+    if device == "gpu":
+        status, device_count = runtime.cudaGetDeviceCount()
+        if status == runtime.cudaError_t.cudaSuccess and device_count > 0:
+            device, device_id = infer_device(device, device_id)
+            if not (0 <= device_id < device_count):
+                device_id = 0
+            return device, device_id
+
+        # The serialized model used a GPU, but none is visible now. Let the
+        # normal auto-selection logic choose the available device.
+        device = "auto"
+        device_id = None
+
+    device, device_id = infer_device(device, device_id)
+    if device == "cpu":
+        device_id = -1
+    return device, device_id
+
+
 class ForestInferenceImpl:
     def __init__(
         self,
@@ -344,6 +370,50 @@ class ForestInferenceImpl:
             use_double_precision=self._use_double_precision,
             device=self.device,
             device_id=self.device_id
+        )
+
+    def __getstate__(self):
+        """Return the state needed to rebuild the native inference model."""
+        return {
+            "layout": self._layout,
+            "align_bytes": self.align_bytes,
+            "use_double_precision": self._use_double_precision,
+            "device": self.device,
+            "device_id": self.device_id,
+            "treelite_model_bytes": self._treelite_model_bytes,
+            "default_chunk_size": self.default_chunk_size,
+            "precision": self.precision,
+        }
+
+    def __setstate__(self, state):
+        """Rebuild the native inference model from serialized state."""
+        self.device, self.device_id = _infer_device_for_deserialization(
+            state["device"], state["device_id"]
+        )
+        self.stream = None
+        if self.device == "gpu":
+            previous_device = Device()
+            try:
+                cuda_device = Device(self.device_id)
+                cuda_device.set_current()
+                self.stream = cuda_device.create_stream()
+            finally:
+                previous_device.set_current()
+
+        self._layout = state["layout"]
+        self.align_bytes = state["align_bytes"]
+        self._use_double_precision = state["use_double_precision"]
+        self._treelite_model_bytes = state["treelite_model_bytes"]
+        self.default_chunk_size = state["default_chunk_size"]
+        self.precision = state["precision"]
+        self.impl = ForestInference_impl(
+            self.stream,
+            self._treelite_model_bytes,
+            layout=self._layout,
+            align_bytes=self.align_bytes,
+            use_double_precision=self._use_double_precision,
+            device=self.device,
+            device_id=self.device_id,
         )
 
     @property
