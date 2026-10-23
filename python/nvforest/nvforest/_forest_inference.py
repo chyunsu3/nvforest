@@ -41,6 +41,29 @@ def infer_is_classifier(treelite_model: treelite.Model) -> bool:
     )
 
 
+def _restore_forest_inference(state: dict, is_classifier: bool):
+    """Restore a forest inference object using the available device."""
+    forest = ForestInferenceImpl.__new__(ForestInferenceImpl)
+    forest.__setstate__(state)
+
+    if forest.device == "gpu":
+        cls = (
+            GPUForestInferenceClassifier
+            if is_classifier
+            else GPUForestInferenceRegressor
+        )
+    else:
+        cls = (
+            CPUForestInferenceClassifier
+            if is_classifier
+            else CPUForestInferenceRegressor
+        )
+
+    result = cls.__new__(cls)
+    result.forest = forest
+    return result
+
+
 class ClassifierMixin:
     def get_class_assignment(
         self,
@@ -55,6 +78,16 @@ class ClassifierMixin:
         else:
             result = raw_out.argmax(axis=1)
         return result
+
+
+class PickleMixin:
+    """Mixin class that provides pickle support for ForestInference classes."""
+
+    def __reduce__(self):
+        return (
+            _restore_forest_inference,
+            (self.forest.__getstate__(), self.is_classifier),
+        )
 
 
 class _AutoIterations:
@@ -212,7 +245,7 @@ class OptimizeMixin:
 
 
 class CPUForestInferenceClassifier(
-    OptimizeMixin, ClassifierMixin, ForestInferenceClassifier
+    PickleMixin, OptimizeMixin, ClassifierMixin, ForestInferenceClassifier
 ):
     def __init__(
         self,
@@ -352,7 +385,9 @@ class CPUForestInferenceClassifier(
         return -1
 
 
-class CPUForestInferenceRegressor(OptimizeMixin, ForestInferenceRegressor):
+class CPUForestInferenceRegressor(
+    PickleMixin, OptimizeMixin, ForestInferenceRegressor
+):
     def __init__(
         self,
         *,
@@ -482,7 +517,7 @@ class CPUForestInferenceRegressor(OptimizeMixin, ForestInferenceRegressor):
 
 
 class GPUForestInferenceClassifier(
-    OptimizeMixin, ClassifierMixin, ForestInferenceClassifier
+    PickleMixin, OptimizeMixin, ClassifierMixin, ForestInferenceClassifier
 ):
     def __init__(
         self,
@@ -624,7 +659,9 @@ class GPUForestInferenceClassifier(
         return self.forest.device_id
 
 
-class GPUForestInferenceRegressor(OptimizeMixin, ForestInferenceRegressor):
+class GPUForestInferenceRegressor(
+    PickleMixin, OptimizeMixin, ForestInferenceRegressor
+):
     def __init__(
         self,
         *,

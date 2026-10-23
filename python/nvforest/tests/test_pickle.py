@@ -97,6 +97,7 @@ def test_pickle_falls_back_to_gpu_zero(monkeypatch):
 
     restored = pickle.loads(serialized)
 
+    assert isinstance(restored, nvforest.GPUForestInferenceClassifier)
     assert restored.forest.device == "gpu"
     assert restored.device_id == 0
 
@@ -113,6 +114,7 @@ def test_pickle_falls_back_to_cpu(monkeypatch):
 
     restored = pickle.loads(serialized)
 
+    assert isinstance(restored, nvforest.CPUForestInferenceRegressor)
     assert restored.forest.device == "cpu"
     assert restored.device_id == -1
     np.testing.assert_allclose(restored.predict(X), expected)
